@@ -1,0 +1,35 @@
+"""install_requires=[
+        'fastapi>=0.68.0',
+        'uvicorn>=0.15.0',
+        'librosa>=0.8.1',
+        'opencv-contrib-python',
+        'opencv-python',
+        'pydub>=0.25.1',
+        'python-docx>=0.8.11',
+        'PyPDF2>=1.27.5',
+    ],
+"""
+from setuptools import setup, find_packages
+
+setup(
+    name='emorea-backend',
+    version='0.1.0',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    author='Sofia Condesso (50308)',
+    author_email='a50308@alunos.isel.pt',
+    description='Emotion recognition in multimedia content',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    url='https://your-project-url.com',
+    license='MIT',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        #'Programming Language :: Python :: 3',
+        #'Programming Language :: Python :: 3.8',
+        #'Programming Language :: Python :: 3.9',
+        #'Programming Language :: Python :: 3.10',
+    ],
+)
