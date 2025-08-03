@@ -1,3 +1,14 @@
+'''
+ # @ Author: Your name
+ # @ Create Time: 2025-07-10 12:21:49
+ # @ Modified by: Your name
+ # @ Modified time: 2025-08-01 21:16:21
+ # @ Description: 
+ # * Fuse predictions (e.g. via weighted voting or LLM aggregation)
+ # * Add a `FusionEngine` that takes all outputs and returns a final label
+ '''
+
+
 import numpy as np
 
 class LateFusion:
@@ -5,23 +16,27 @@ class LateFusion:
         """
         weights: Dict like {'text': 0.4, 'audio': 0.3, 'video': 0.3}
         """
-        self.weights = weights if weights else {'text': 1/3, 'audio': 1/3, 'video': 1/3}
-        self.modalities = ['text', 'audio', 'video']
+        self.weights = weights if weights else {'text': 1/3, 'audio': 1/3, 'image': 1/3}
+        self.modalities = ['text', 'audio', 'image']
         
     def fuse(self, predictions: dict):
         """
-        predictions: Dict of modality -> softmax vector (np.array)
-        Returns: fused_prediction (np.array), confidence_per_modality (dict)
+        Find the most frequent emotion across modalities, weighted by the provided weights.
+        predictions: Dict like {'text': 'happy', 'audio': 'sad', 'image': 'neutral'}
+
+        Returns the final emotion label.
         """
-        assert set(predictions.keys()) == set(self.modalities), "All modalities must be present"
+        # Initialize a dictionary to hold the weighted counts
+        weighted_counts = {emotion: 0 for emotion in set(predictions.values())}
+
+        # Iterate through each modality and its prediction
+        for modality, prediction in predictions.items():
+            if modality in self.weights:
+                weight = self.weights[modality]
+                weighted_counts[prediction] += weight
+
+        # Find the emotion with the highest weighted count
+        final_emotion = max(weighted_counts, key=weighted_counts.get)
         
-        fused = np.zeros_like(predictions['text'])
-        confidences = {}
+        return final_emotion
         
-        for modality in self.modalities:
-            conf_score = np.max(predictions[modality])
-            confidences[modality] = conf_score
-            fused += self.weights[modality] * predictions[modality]
-        
-        final_pred = np.argmax(fused)
-        return final_pred, fused, confidences

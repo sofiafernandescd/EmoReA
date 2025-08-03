@@ -36,8 +36,10 @@ class EmotionRecognitionAssistant:
 
         if "audio" in processed_data and processed_data["audio"] and processed_data["audio"]["raw"] is not None:
             analysis_results["audio_emotion"] = self.speech_recognizer.analyze(
-                processed_data["audio"]["raw"], processed_data["audio"]["sample_rate"]
-            )
+                processed_data["audio"]["raw"], processed_data["audio"]["sample_rate"])
+            
+            #analysis_results["audio_emotion"] = self.speech_recognizer.analyze_parts(
+            #    processed_data["audio"]["audio_chunks"], processed_data["audio"]["sample_rate"])
 
         if "image" in processed_data and isinstance(processed_data["image"], Image.Image):
             analysis_results["face_emotion"] = self.face_recognizer.analyze_image(processed_data["image"])

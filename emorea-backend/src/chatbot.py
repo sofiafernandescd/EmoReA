@@ -4,6 +4,7 @@
  # @ Description: This module provides an interface for interacting with a chatbot assistant
  #                  that can discuss the results of an emotion analysis.
  #                  It uses the Ollama API to generate responses based on the analysis results.
+ #                  * Let the chatbot reason over contradictions
  # @ References:
  '''
 

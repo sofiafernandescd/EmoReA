@@ -1,4 +1,3 @@
-
 import os
 import tempfile
 import cv2
@@ -18,7 +17,7 @@ class FileProcessor:
             'image': ['jpg', 'jpeg', 'png'],
             'video': ['mp4', 'avi', 'mov', 'webm']
         }
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.face_cascade = None        
         self.transcriber = whisper.load_model("base") 
 
     def process_file(self, file_path):
@@ -34,8 +33,10 @@ class FileProcessor:
             elif file_type == 'audio':
                 return self._process_audio(file_path)
             elif file_type == 'image':
+                self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
                 return self._process_image(file_path)
             elif file_type == 'video':
+                self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
                 return self._process_video(file_path)
             else:
                 return {"error": "Unsupported file type"}
@@ -68,17 +69,24 @@ class FileProcessor:
 
         return {"text": text}
 
-    def _process_audio(self, file_path):
-        """Process audio files by loading audio, sample rate, and transcribing"""
+    def _process_audio(self, file_path, chunk_duration=3, hop_duration=1):
+        """Load audio files and transcribe them"""
         audio, sr = librosa.load(file_path, sr=16000)
+        # tracribe audio and split into segments
         transcript = self.transcriber.transcribe(audio)
+        segments = transcript['segments']
+        audio_chunks = [audio[int(seg['start'] * sr):int(seg['end'] * sr)] for seg in segments]
+
         return {
-            "text": transcript,
+            "text": transcript['text'],
+            "segments": segments,
             "audio": {
                 "raw": audio,
-                "sample_rate": sr
+                "audio_chunks": audio_chunks,
+                "sample_rate": sr,
             }
         }
+
 
     def _process_image(self, file_path):
         """Process image files with face detection"""
@@ -131,3 +139,4 @@ class FileProcessor:
         cap.release()
         result["frames"] = frames
         return result
+

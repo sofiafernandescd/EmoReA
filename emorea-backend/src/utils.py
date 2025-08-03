@@ -365,3 +365,38 @@ def load_fer2013():
     df_fer['label'] = df_fer['label'].map(label_to_text)
     
     return df_fer
+
+def load_iemocap():
+    """
+    The IEMOCAP (Interactive Emotional Motion Capture) dataset is a multimodal dataset that contains audio, video, and motion capture recordings of actors performing emotional dialogues. 
+    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("dejolilandry/iemocapfullrelease")
+    # Check subfolders
+    print("Subfolders in the dataset:", os.listdir(file_path))
+
+    df = pd.read_csv(os.path.join(file_path, "IEMOCAP.csv"))
+    
+    return df
+
+
+def load_meld():
+    """
+    The MELD (Multimodal EmotionLines Dataset) is a dataset that contains audio, video, and text data from conversations in TV series. 
+    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("bhandariprakanda/meld-emotion-recognition")
+    # Check subfolders
+    print("Subfolders in the dataset:", os.listdir(file_path))
+
+    df = pd.read_csv(os.path.join(file_path, "MELD.csv"))
+    
+    return df
