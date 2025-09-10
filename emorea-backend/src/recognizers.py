@@ -21,8 +21,10 @@ import numpy as np
 from deepface import DeepFace
 from litellm import completion 
 import opensmile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import librosa
+import cv2
 
 
 class TextEmotionRecognizer:
@@ -35,6 +37,8 @@ class TextEmotionRecognizer:
                  llm_model="openhermes:latest"
                  #llm_model="openhermes2.5-mistral:latest"
                  #llm_model="mistral:7b"
+                 #llm_model="dolphin-mistral:latest"
+                 #llm_model="ALIENTELLIGENCE/emotionalintelligenceanalysis:latest"
                  ):
         self.llm_model = llm_model
         self.executor = ThreadPoolExecutor(max_workers=2)
@@ -54,6 +58,7 @@ class TextEmotionRecognizer:
             - Use a separate thread for LLM calls to avoid blocking the main thread.
             - Use a timeout to avoid waiting indefinitely for LLM responses."""
         return self.executor.submit(self.analyze, text)
+    
 
     def analyze(self, text, one_word=True):
         """Analyze text for emotions using a language model"""
@@ -94,11 +99,33 @@ class TextEmotionRecognizer:
             return response.choices[0].message.content.strip()
         except Exception as e:
             return {"error": str(e)}
+        
+
+    def batch_analyze(self, texts, one_word=True, max_workers=4):
+        """
+        Analyze a list of texts asynchronously using threads.
+        Returns a list of predicted emotions in the same order as input.
+        """
+        futures = [self.executor.submit(self.analyze, text, one_word) for text in texts]
+        results = [None] * len(texts)
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                # Identify index of the future in original submission
+                idx = futures.index(future)
+                results[idx] = result
+            except Exception as e:
+                print(f"Error analyzing text: {e}")
+                idx = futures.index(future)
+                results[idx] = "neutral"  # fallback if an error occurs
+
+        return results
 
 
 
 class SpeechEmotionRecognizer:
-    def __init__(self, model_path='/Users/sofiafernandes/Documents/Repos/EmoReA/emorea-backend/notebooks/speech/ser_svm_model_iemocap.joblib'):
+    def __init__(self, model_path='/Users/sofiafernandes/Documents/Repos/EmoReA/emorea-backend/notebooks/speech/ser_svm_model.joblib'):
         try:
             with open(model_path, 'rb') as file:
                 #self.model = pickle.load(file)
@@ -122,18 +149,34 @@ class SpeechEmotionRecognizer:
         thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
         thread.start()
 
-    def extract_features(self, audio, sr):
+    def extract_features_opensmile(self, audio, sr):
         smile = opensmile.Smile(
             feature_set=opensmile.FeatureSet.GeMAPSv01b,
             feature_level=opensmile.FeatureLevel.Functionals,
         )
         features = smile.process_signal(audio, sr)
         return features.values
+    
+    # Feature extraction func
+    def extract_audio_features(self, audio, sr, mfcc=True, chroma=True, mel=True):
+        feats = []
+        if mfcc:
+            mf = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)
+            feats.append(np.array(np.mean(mf.T, axis=0)))
+        if chroma:
+            st = np.abs(librosa.stft(audio))
+            ch = librosa.feature.chroma_stft(S=st, sr=sr)
+            feats.append(np.mean(ch.T, axis=0))
+        if mel:
+            mel = librosa.feature.melspectrogram(y=audio, sr=sr)
+            feats.append(np.mean(mel.T, axis=0))
+        return np.array(feats)
 
     def analyze(self, audio, sr):
         if self.model is None:
             return {"error": "Speech emotion recognizer model not loaded"}
-        features = self.extract_features(audio, sr)
+        #features = self.extract_audio_features(audio, sr)
+        features = self.extract_features_opensmile(audio, sr)
         try:
             prediction = self.model.predict(features)
             return {"emotions": prediction.tolist()} 
@@ -146,7 +189,8 @@ class SpeechEmotionRecognizer:
         
         predictions = []
         for audio in audio_list:
-            features = self.extract_features(audio, sr)
+            features = self.extract_audio_features(audio, sr)
+            #features = self.extract_features(audio, sr)
             try:
                 prediction = self.model.predict(features)
                 predictions.append({prediction})
@@ -168,14 +212,15 @@ class FaceEmotionRecognizer:
         """Analyze a single image for facial emotions"""
         try:
             image_array = np.array(image)
+            if len(image_array.shape) < 3:
+                # grayscale to BGR
+                image_array = cv2.cvtColor(image_array.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+            # detect emotions
             results = DeepFace.analyze(
                 img_path=image_array,
                 actions=['emotion'],
                 detector_backend=self.backend,
-                enforce_detection=True,  # Ensure face detection is enforced
-                #progress_bar=0,  # Disable progress bar for silent operation
-                #normalize=True,  # Normalize the image for better results
-                #silent=True
+                enforce_detection=False,  # Ensure face detection is enforced
             )
             if results:
                 return {'emotions': results[0]['emotion'], 'dominant_emotion': results[0]['dominant_emotion']}

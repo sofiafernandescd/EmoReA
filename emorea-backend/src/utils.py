@@ -15,11 +15,16 @@ emotions_dict = {
     }
 
 import pandas as pd
-import os
+import os, sys
 import glob
 from kagglehub import kagglehub
 import pickle
 import numpy as np
+import cv2
+from tqdm import tqdm
+import json
+module_path = os.path.abspath(os.path.join('..', '..')) # or the path to your source code
+sys.path.insert(0, module_path)
 
 def load_csd_file(filepath):
     with open(filepath, 'rb') as f:
@@ -47,7 +52,60 @@ def filter_emotions(df):
     df.reset_index(drop=True, inplace=True)
     return df
 
+######### TER Datasets #########
+def load_emorynlp(split='train'):
+    emory_path = os.path.join(module_path, 'data', 'EmoryNLP', f'emorynlp_{split}.json')
+    with open(emory_path, 'r') as f:
+        emory_data = json.load(f)['episodes']
+    print(f"Loaded {len(emory_data)} episodes from EmoryNLP {split} dataset")
 
+    texts, labels = [], []
+    for episode in emory_data:
+        for scene in episode['scenes']:
+            for utt in scene['utterances']:
+                texts.append(utt['transcript'])
+                labels.append(utt['emotion'].lower())
+
+    df = pd.DataFrame({
+        'text': texts,
+        'label': labels
+    })
+    emo_map = {
+        'joyful': 'happy',
+        'scared': 'fear',
+        'neutral': 'neutral',
+        'mad' : 'mad',
+        'peaceful': 'peaceful',
+        'powerful':'powerful',
+        'sad':'sad'
+
+    }
+    df['label'] = df['label'].map(emo_map)
+    return df
+
+def load_isear():
+
+    # download from Kaggle
+    path = kagglehub.dataset_download("faisalsanto007/isear-dataset")
+    path_data = os.path.join(path, "eng_dataset.csv")
+
+    # rename columns
+    df = pd.read_csv(path_data)
+    df.columns = ['id', 'label', 'text']
+
+    emo_map = {
+        'joy': 'happy',
+        'sadness': 'sad',
+        'anger': 'angry',
+        'fear': 'fear'
+    }    
+    df['label'] = df['label'].map(emo_map)
+    print(f"Loaded {len(df)} samples from ISEAR dataset")
+    return df
+
+
+
+######### SER Datasets #########
 def load_emodb():
     """
     The EMODB (Emotional Database) is a German emotional speech database that contains recordings of actors reading sentences with different emotions. It is widely used for emotion recognition tasks in speech processing.
@@ -92,46 +150,6 @@ def load_emodb():
 
     return emo_db
 
-def load_ravdess():
-    """
-    The RAVDESS (Ryerson Audio-Visual Database of Emotional Speech and Song) is a dataset that contains audio and video recordings of actors performing emotional speech and song. 
-    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
-    The dataset is widely used for emotion recognition tasks in both audio and visual modalities.
-    Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
-    """
-    # Download dataset from Kaggle
-    path = kagglehub.dataset_download("uwrfkaggler/ravdess-emotional-speech-audio")
-    print("Path to dataset files:", path)
-    # List all files in the dataset
-    print(os.listdir(path))
-
-    # Define the dataset directory
-    ravdess_path = path + "/audio_speech_actors_01-24/**/*.wav"
-
-    # Codebook that maps RAVDESS filename encoding to emotions
-    emotion_map = {
-        '01': 'neutral',
-        '02': 'calm',
-        '03': 'happy',
-        '04': 'sad',
-        '05': 'angry',
-        '06': 'fear', #'fearful',
-        '07': 'disgust',
-        '08': 'surprise' #'surprised'
-    }
-
-    # Extract emotion labels from filenames
-    filenames = glob.glob(ravdess_path, recursive=True)
-    emotions = [emotion_map[os.path.basename(f).split('-')[2]] for f in filenames if os.path.basename(f).split('-')[2] in emotion_map]
-
-    # Create a DataFrame to store the emotion labels
-    ravdess_db = pd.DataFrame({
-        'filename': filenames,
-        'label': emotions
-    })
-
-    return ravdess_db
 
 def load_tess():
     """
@@ -221,7 +239,230 @@ def load_crema_d():
 
     return crema_df
 
+def load_ravdess():
+    """
+    The RAVDESS (Ryerson Audio-Visual Database of Emotional Speech and Song) is a dataset that contains audio and video recordings of actors performing emotional speech and song. 
+    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is widely used for emotion recognition tasks in both audio and visual modalities.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # Download dataset from Kaggle
+    path = kagglehub.dataset_download("uwrfkaggler/ravdess-emotional-speech-audio")
+    print("Path to dataset files:", path)
+    # List all files in the dataset
+    print(os.listdir(path))
 
+    # Define the dataset directory
+    ravdess_path = path + "/audio_speech_actors_01-24/**/*.wav"
+
+    # Codebook that maps RAVDESS filename encoding to emotions
+    emotion_map = {
+        '01': 'neutral',
+        '02': 'calm',
+        '03': 'happy',
+        '04': 'sad',
+        '05': 'angry',
+        '06': 'fear', #'fearful',
+        '07': 'disgust',
+        '08': 'surprise' #'surprised'
+    }
+
+    # Extract emotion labels from filenames
+    filenames = glob.glob(ravdess_path, recursive=True)
+    emotions = [emotion_map[os.path.basename(f).split('-')[2]] for f in filenames if os.path.basename(f).split('-')[2] in emotion_map]
+
+    # Create a DataFrame to store the emotion labels
+    ravdess_db = pd.DataFrame({
+        'filename': filenames,
+        'label': emotions
+    })
+
+    return ravdess_db
+
+
+def load_savee():
+    pass
+
+
+######### FER Datasets #########
+def load_ck():
+    """
+    The CK+ (Cohn-Kanade) dataset is a widely used dataset for facial expression recognition. 
+    It contains video sequences of facial expressions from a diverse set of subjects, annotated with emotion labels.
+    The dataset is commonly used for training and evaluating models in facial expression recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("davilsena/ckdataset")
+    print("Subfolders in the dataset:", os.listdir(file_path))
+
+    df = pd.read_csv(os.path.join(file_path, "ckextended.csv"))
+    
+    # map emotion labels
+    emotion_map = {
+        0: "angry", #"anger",
+        1: "disgust",
+        2: "fear",
+        3: "happy", #"happiness",
+        4: "sad", #"sadness",
+        5: "surprise",
+        6: "neutral",
+        7: "contempt"
+    }
+        
+    df['label'] = df['emotion'].map(emotion_map)
+    return df
+
+def load_fer2013():
+    """
+    The FER2013 (Facial Expression Recognition 2013) dataset is a widely used dataset for facial expression recognition tasks. 
+    It contains grayscale images of faces with corresponding emotion labels, including happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is commonly used for training and evaluating models in facial expression recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # download dataset
+    file_path = kagglehub.dataset_download("deadskull7/fer2013")
+    print("Subfolders in the dataset:", os.listdir(file_path))
+    # read dataset
+    df_fer = pd.read_csv(os.path.join(file_path, "fer2013.csv"))
+    print("First few rows of the dataframe:")
+    print(df_fer.head())
+
+    
+    
+    df_fer['label'] = df_fer['emotion'].map(label_to_text)
+    
+    return df_fer
+
+def load_rafbd(folder="test"):
+    # Download the dataset
+    file_path = kagglehub.dataset_download("shuvoalok/raf-db-dataset")
+    imgs_path = os.path.join(file_path, "DATASET", folder)
+    # Check subfolders
+    print("Subfolders:", os.listdir(file_path))
+    print("Subfolders in the dataset:", os.listdir(imgs_path))
+    # read test labels
+    df_raf = pd.read_csv(os.path.join(file_path, f"{folder}_labels.csv"))
+    emotion_map = {
+        1: "surprise",
+        2: "fear",
+        3: "disgust",
+        4: "happy",
+        5: "sad",
+        6: "angry",
+        7: "neutral"
+    }
+
+    df_raf['emo'] = df_raf['label']
+    df_raf['label'] = df_raf['emo'].map(emotion_map)
+    raf_imgs = []
+    # read images from each of the folders in column "label"
+    for i in tqdm(range(len(df_raf))):
+        folder = str(df_raf.iloc[i]['emo'])
+        img_path = os.path.join(imgs_path, folder, df_raf.iloc[i]['image'])
+        if os.path.exists(img_path):
+            img = cv2.imread(img_path)
+            if img is not None:
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB for plotting
+                raf_imgs.append(img_rgb)
+            else:
+                raf_imgs.append("Missing image")
+
+    df_raf['pixels'] = raf_imgs
+    return df_raf
+
+def load_affectnet():
+    
+    data_path = kagglehub.dataset_download('mstjebashazida/affectnet')
+    print(f"Dataset downloaded to: {data_path}")
+    list_folders = os.listdir(os.path.join(data_path, 'archive (3)', 'Test'))
+    print(f"Available folders: {list_folders}")
+    filenames, labels, imgs = [], [], []
+    for emo in tqdm(list_folders):
+        if emo!="Contempt":
+            files = os.path.join(data_path, 'archive (3)', 'Test', emo)
+            for file in os.listdir(files):
+                if emo=="Anger":
+                    labels.append("angry")
+                else:
+                    labels.append(emo.lower())
+                filenames.append(os.path.join(files, file))
+                imgs.append(cv2.imread(os.path.join(files, file)))
+
+    df = pd.DataFrame({
+        'filename': filenames,
+        'label': labels,
+        'pixels': imgs
+    })
+
+    return df
+
+###### MER DATASETS #######
+def load_iemocap():
+    """
+    The IEMOCAP (Interactive Emotional Motion Capture) dataset is a multimodal dataset that contains audio, video, and motion capture recordings of actors performing emotional dialogues. 
+    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("dejolilandry/iemocapfullrelease")
+    # Check subfolders
+    print("Subfolders in the dataset:", os.listdir(file_path))
+
+    labels_path = kagglehub.dataset_download("samuelsamsudinng/iemocap-emotion-speech-database")
+    labels_path = os.path.join(labels_path, "iemocap_full_dataset.csv")
+    # Load the labels CSV file
+    labels_df = pd.read_csv(labels_path)
+    #allowed_emotions = ['neu', 'sad', 'ang', 'hap', 'sur', 'fea', 'dis']
+    #df = labels_df[labels_df['label'].isin(allowed_emotions)].copy()#.sample(100)
+    emos = {
+        'neu': 'neutral',
+        'sad': 'sad',
+        'ang': 'angry',
+        'hap': 'happy',
+        'sur': 'surprise',
+        'fea': 'fear',
+        'dis': 'disgust'
+    }
+    df = labels_df.copy()
+    df['label'] = df['emotion'].map(emos)
+    df['filename'] = df['path'].apply(lambda x: os.path.join(file_path, "IEMOCAP_full_release", x))
+        
+    return df
+
+
+def load_meld():
+    """
+    The MELD (Multimodal EmotionLines Dataset) is a dataset that contains audio, video, and text data from conversations in TV series. 
+    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
+    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Returns:
+        pd.DataFrame: DataFrame with columns ['filename', 'label']
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("bhandariprakanda/meld-emotion-recognition")
+    # Check subfolders
+    print("Subfolders in the dataset:", os.listdir(file_path))
+    raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test", "output_repeated_splits_test")
+    files = os.listdir(raw_path)
+    # scan the directory 
+    print("Subfolders in the raw data:", files)
+    # create dataframe with the files
+    filenames = [os.path.join(raw_path, file) for file in files]
+    # Load the labels CSV file
+    labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test_sent_emo.csv")
+    labels_df = pd.read_csv(labels_path)
+    labels_df['filename'] = labels_df[['Dialogue_ID', 'Utterance_ID']].apply(
+        lambda x: os.path.join(raw_path, f"dia{x['Dialogue_ID']}_utt{x['Utterance_ID']}.mp4"), axis=1
+        )
+    
+    return labels_df
 
 def load_cmu_mosi():
     """
@@ -265,138 +506,3 @@ def load_cmu_mosi():
         }
         data.append(row)
     return pd.DataFrame(data)
-
-
-def load_ck():
-    """
-    The CK+ (Cohn-Kanade) dataset is a widely used dataset for facial expression recognition. 
-    It contains video sequences of facial expressions from a diverse set of subjects, annotated with emotion labels.
-    The dataset is commonly used for training and evaluating models in facial expression recognition tasks.
-    Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
-
-    # Download dataset from Kaggle
-    path = kagglehub.dataset_download("samarwarsi/ck-plus")
-    print("Path to dataset files:", path)
-    # List all files in the dataset
-    print(os.listdir(path))
-
-    ck_path = os.path.join(path, "CK+")
-    all_files = glob.glob(os.path.join(ck_path, "*.jpg"))
-
-    # Codebook that maps CK+ filename encoding to emotions
-    emotion_map = {
-        'anger': 'angry',
-        'contempt': 'disgusted',
-        'disgust': 'disgusted',
-        'fear': 'fearful',
-        'happy': 'happy',
-        'sadness': 'sad',
-        'surprise': 'surprised'
-    }
-
-    # Extract emotion labels from filenames
-    labels = [emotion_map[os.path.basename(f).split('-')[1]] for f in all_files if os.path.basename(f).split('-')[1] in emotion_map]
-
-    # Create a DataFrame to store the emotion labels
-    ck_db = pd.DataFrame({
-        'filename': all_files,
-        'label': labels
-    })
-    """
-    # Download dataset
-    file_path = kagglehub.dataset_download("davilsena/ckdataset")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
-
-    df = pd.read_csv(os.path.join(file_path, "ckextended.csv"))
-    # Check the first few rows of the dataframe
-    print("First few rows of the dataframe:")
-    print(df.head())
-    # Check the number of unique emotions
-    print("Number of unique emotions:", df['label'].nunique())
-    print("Number of unique usages:", df['Usage'].nunique())
-    # Check the distribution of emotions
-    emotion_map = {
-        0: "angry", #"anger",
-        1: "disgust",
-        2: "fear",
-        3: "happy", #"happiness",
-        4: "sad", #"sadness",
-        5: "surprise",
-        6: "neutral",
-        7: "contempt"
-    }
-        
-    df['label'] = df['label'].map(emotion_map)
-    return df
-
-def load_fer2013():
-    """
-    The FER2013 (Facial Expression Recognition 2013) dataset is a widely used dataset for facial expression recognition tasks. 
-    It contains grayscale images of faces with corresponding emotion labels, including happiness, sadness, anger, fear, surprise, and disgust.
-    The dataset is commonly used for training and evaluating models in facial expression recognition tasks.
-    Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
-    """
-    # Download dataset
-    file_path = kagglehub.dataset_download("deadskull7/fer2013")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
-
-    df_fer = pd.read_csv(os.path.join(file_path, "fer2013.csv"))
-    # Check the first few rows of the dataframe
-    print("First few rows of the dataframe:")
-    print(df_fer.head())
-    # Check the number of unique emotions
-    print("Number of unique emotions:", df_fer['label'].nunique())
-    print("Number of unique usages:", df_fer['Usage'].nunique())
-
-    label_to_text = {
-        0:'angry',  # anger
-        1:'disgust',
-        2:'fear', 
-        3:'happy', # happiness 
-        4:'sad', # sadness
-        5: 'surprise', 
-        6: 'neutral'
-    }
-    
-    df_fer['label'] = df_fer['label'].map(label_to_text)
-    
-    return df_fer
-
-def load_iemocap():
-    """
-    The IEMOCAP (Interactive Emotional Motion Capture) dataset is a multimodal dataset that contains audio, video, and motion capture recordings of actors performing emotional dialogues. 
-    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
-    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
-    Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
-    """
-    # Download dataset
-    file_path = kagglehub.dataset_download("dejolilandry/iemocapfullrelease")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
-
-    df = pd.read_csv(os.path.join(file_path, "IEMOCAP.csv"))
-    
-    return df
-
-
-def load_meld():
-    """
-    The MELD (Multimodal EmotionLines Dataset) is a dataset that contains audio, video, and text data from conversations in TV series. 
-    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
-    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
-    Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
-    """
-    # Download dataset
-    file_path = kagglehub.dataset_download("bhandariprakanda/meld-emotion-recognition")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
-
-    df = pd.read_csv(os.path.join(file_path, "MELD.csv"))
-    
-    return df

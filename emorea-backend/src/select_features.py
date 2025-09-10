@@ -191,11 +191,12 @@ def algorithm2(
     return np.array(selected_features)
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, algorithm='algorithm2', L=0.95, MS=0.8, dispersion_measure='MM'):
+    def __init__(self, algorithm='algorithm2', L=0.95, MS=0.8, dispersion_measure='MM', similarity_measure='AC'):
         self.algorithm = algorithm
         self.L = L
         self.MS = MS
         self.dispersion_measure = dispersion_measure
+        self.similarity_measure = similarity_measure  # Default similarity measure for algorithm2
         self.selected_indices = None
         
     def fit(self, X, y=None):
