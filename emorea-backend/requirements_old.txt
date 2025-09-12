@@ -1,0 +1,9 @@
+# requirements.txt
+fastapi>=0.68.0
+uvicorn>=0.15.0
+python-multipart>=0.0.5
+librosa>=0.8.1
+opencv-python>=4.5.5
+pydub>=0.25.1
+python-docx>=0.8.11
+PyPDF2>=1.27.5

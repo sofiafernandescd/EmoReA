@@ -8,21 +8,17 @@
  #          - https://docs.litellm.ai/docs/providers/ollama
  '''
 import os
-import warnings
+os.environ["LITELLM_API_BASE"] = "http://localhost:11434"
+os.environ["LITELLM_API_KEY"] = "ollama"
 #import tensorflow as tf
-# Suppress TensorFlow warnings
-#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-#warnings.filterwarnings('ignore')
-#tf.get_logger().setLevel('ERROR')
-
 import pickle
 from joblib import load
 import numpy as np
 from deepface import DeepFace
 from litellm import completion 
 import opensmile
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
+#from concurrent.futures import ThreadPoolExecutor, as_completed
+#import threading
 import librosa
 import cv2
 
@@ -41,7 +37,7 @@ class TextEmotionRecognizer:
                  #llm_model="ALIENTELLIGENCE/emotionalintelligenceanalysis:latest"
                  ):
         self.llm_model = llm_model
-        self.executor = ThreadPoolExecutor(max_workers=2)
+        #self.executor = ThreadPoolExecutor(max_workers=2)
 
     def analyze_async(self, text):
         """Asynchronous method to analyze text for emotions"""
@@ -57,41 +53,71 @@ class TextEmotionRecognizer:
             - Use a queue to handle LLM requests and responses.
             - Use a separate thread for LLM calls to avoid blocking the main thread.
             - Use a timeout to avoid waiting indefinitely for LLM responses."""
-        return self.executor.submit(self.analyze, text)
+        #return self.executor.submit(self.analyze, text)
+        pass
     
 
-    def analyze(self, text, one_word=True):
+    def analyze(self, text, one_word=True, few_shot=False):
         """Analyze text for emotions using a language model"""
         
         try:
             if one_word:
+                if few_shot:
+                    response = completion(
+                        #model=f"ollama_chat/{self.llm_model}",
+                        model=f"ollama/{self.llm_model}",
+                        api_base="http://localhost:11434",
+                        api_key="ollama",  # dummy
+                        #max_tokens=1,  
+                        #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
+                        temperature=0.0,  # Set temperature to 0 for deterministic output
+                        top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are an emotion classification assistant. "
+                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
+                                    "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                )
+                            },
+                            {"role": "user", "content": "I'm feeling really down about everything."},
+                            {"role": "assistant", "content": "sad"},
+                            {"role": "user", "content": "This is the best day of my life!"},
+                            {"role": "assistant", "content": "happy"},
+                            {"role": "user", "content": f"{text}\nRemember to respond with only one word from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."}
+                        ]
+                    )
+                else:
+                    response = completion(
+            
+                        model=f"ollama/{self.llm_model}",
+                        api_base="http://localhost:11434",
+                        api_key="ollama",  # dummy
+                        #max_tokens=1,  # Only allow one token response
+                        #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
+                        temperature=0.0,  # deterministic output
+                        top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are an emotion classification assistant. "
+                                    f"Given the following dialogue identify the underlying emotion: {text}"
+                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
+                                    "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                )
+                            }]
+                    )
 
-                response = completion(
-                    model=f"ollama_chat/{self.llm_model}",
-                    #max_tokens=1,  # Only allow one token response
-                    #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  # Stop on any whitespace or punctuation
-                    temperature=0.0,  # Set temperature to 0 for deterministic output
-                    top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": (
-                                "You are an emotion classification assistant. "
-                                "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
-                                "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
-                            )
-                        },
-                        {"role": "user", "content": "I'm feeling really down about everything."},
-                        {"role": "assistant", "content": "sad"},
-                        {"role": "user", "content": "This is the best day of my life!"},
-                        {"role": "assistant", "content": "happy"},
-                        {"role": "user", "content": f"{text}\nRemember to respond with only one word from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."}
-                    ]
-                )
+                emos = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
+                if response.choices[0].message.content.strip() not in emos:
+                    return 'neutral'
 
             else:
                 response = completion(
-                    model=f"ollama_chat/{self.llm_model}",
+                    #model=f"ollama_chat/{self.llm_model}",
+                    model=f"ollama/{self.llm_model}",
                     messages=[{
                         "content": f"Analyze the emotions expressed in the following text and provide a detailed emotional analysis: {text}",
                         "role": "user"}],
@@ -105,7 +131,7 @@ class TextEmotionRecognizer:
         """
         Analyze a list of texts asynchronously using threads.
         Returns a list of predicted emotions in the same order as input.
-        """
+
         futures = [self.executor.submit(self.analyze, text, one_word) for text in texts]
         results = [None] * len(texts)
 
@@ -121,6 +147,9 @@ class TextEmotionRecognizer:
                 results[idx] = "neutral"  # fallback if an error occurs
 
         return results
+        """
+        pass
+        
 
 
 
@@ -146,8 +175,9 @@ class SpeechEmotionRecognizer:
             Transcribe first to segments (timestamps), then process audio in chunks later or in parallel.
             Use a thread or async wrapper to handle transcription without blocking the main thread.
         """
-        thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
-        thread.start()
+        #thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
+        #thread.start()
+        pass
 
     def extract_features_opensmile(self, audio, sr):
         smile = opensmile.Smile(

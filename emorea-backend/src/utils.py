@@ -461,6 +461,16 @@ def load_meld():
     labels_df['filename'] = labels_df[['Dialogue_ID', 'Utterance_ID']].apply(
         lambda x: os.path.join(raw_path, f"dia{x['Dialogue_ID']}_utt{x['Utterance_ID']}.mp4"), axis=1
         )
+    emo_map = {
+        'neutral': 'neutral',
+        'joy': 'happy',
+        'anger': 'angry',
+        'surprise': 'surprise',
+        'sadness': 'sad',
+        'disgust': 'disgust',
+        'fear': 'fear'
+    }
+    labels_df['label'] = labels_df['Emotion'].map(emo_map)
     
     return labels_df
 

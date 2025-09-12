@@ -1,9 +1,46 @@
-# requirements.txt
-fastapi>=0.68.0
-uvicorn>=0.15.0
-python-multipart>=0.0.5
-librosa>=0.8.1
-opencv-python>=4.5.5
+# Work on python 3.11
+
+# Web framework
+fastapi>=0.103.0
+uvicorn>=0.22.0
+
+# Audio processing
+librosa==0.10.1
 pydub>=0.25.1
-python-docx>=0.8.11
-PyPDF2>=1.27.5
+opensmile==2.5.0
+openai-whisper==20231117
+
+# Video & media processing
+opencv-contrib-python==4.7.0.72
+opencv-python==4.7.0.72
+moviepy==1.0.3
+
+# Document handling
+python-docx==0.8.11
+PyPDF2==3.0.1
+
+# Data science & ML
+pandas==2.1.4
+scikit-learn==1.3.2
+matplotlib==3.8.2
+
+# PyTorch (Apple Silicon support via torch nightly OR stable with MPS)
+torch==2.1.2
+torchvision==0.16.2
+
+# Hugging Face ecosystem
+datasets==2.16.1
+transformers[torch]==4.36.2
+evaluate==0.4.1
+accelerate==0.25.0
+
+# TensorFlow optimized for Mac
+tensorflow-macos==2.14.0
+tensorflow-metal==1.1.0
+
+# Other ML / AI libs
+deepface==0.0.79
+#litellm==0.1.536
+litellm==1.41.12
+#kagglehub==0.1.7
+kagglehub==0.3.13
