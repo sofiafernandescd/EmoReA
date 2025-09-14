@@ -18,6 +18,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator, TransformerMixin
+import seaborn as sns
+
+def plot_similarity_heatmap(X, measure):
+    n_features = X.shape[1]
+    similarity_matrix = np.zeros((n_features, n_features))
+    for i in range(n_features):
+        for j in range(i, n_features):
+            similarity_matrix[i, j] = similarity_matrix[j, i] = calculate_similarity(X[:, i], X[:, j], measure)
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(similarity_matrix, cmap='viridis')
+    plt.title(f'Feature Similarity Matrix ({measure})')
+    plt.xlabel('Feature Index')
+    plt.ylabel('Feature Index')
+    plt.show()
 
 
 def calculate_dispersion(X, measure):

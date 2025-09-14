@@ -20,6 +20,8 @@ source venv/bin/activate
 #source venv/bin/activate
 # Install FFMPEG
 brew install ffmpeg
+# Install Sox (just in notebooks)
+#brew install sox
 # Install the required packages using requirements.txt
 # pip install -r requirements.txt
 pip install --upgrade pip setuptools wheel
