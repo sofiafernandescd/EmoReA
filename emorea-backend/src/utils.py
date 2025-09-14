@@ -437,7 +437,7 @@ def load_iemocap():
     return df
 
 
-def load_meld():
+def load_meld(split='test'):
     """
     The MELD (Multimodal EmotionLines Dataset) is a dataset that contains audio, video, and text data from conversations in TV series. 
     It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
@@ -449,14 +449,19 @@ def load_meld():
     file_path = kagglehub.dataset_download("bhandariprakanda/meld-emotion-recognition")
     # Check subfolders
     print("Subfolders in the dataset:", os.listdir(file_path))
-    raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test", "output_repeated_splits_test")
+    if split=='test':
+        raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test", "output_repeated_splits_test")
+        labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test_sent_emo.csv")
+    elif split=='train':
+        raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "train", "train_splits")
+        labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "train", "train_sent_emo.csv")
     files = os.listdir(raw_path)
     # scan the directory 
     print("Subfolders in the raw data:", files)
     # create dataframe with the files
     filenames = [os.path.join(raw_path, file) for file in files]
     # Load the labels CSV file
-    labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test_sent_emo.csv")
+    
     labels_df = pd.read_csv(labels_path)
     labels_df['filename'] = labels_df[['Dialogue_ID', 'Utterance_ID']].apply(
         lambda x: os.path.join(raw_path, f"dia{x['Dialogue_ID']}_utt{x['Utterance_ID']}.mp4"), axis=1
