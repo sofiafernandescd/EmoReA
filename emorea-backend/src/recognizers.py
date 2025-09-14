@@ -39,25 +39,10 @@ class TextEmotionRecognizer:
         self.llm_model = llm_model
         #self.executor = ThreadPoolExecutor(max_workers=2)
 
-    def analyze_async(self, text):
-        """Asynchronous method to analyze text for emotions"""
-        """🔹1. LLM Calls Are Blocking Everything
-            💡 Problem:
-            You are calling the LLM synchronously, which blocks the entire program (including UI or video/audio processing) until a reply comes back.
-            ✅ Solution:
-            Use concurrent execution:
-            - Replace synchronous completion() calls with a thread or async wrapper.
-            For Jupyter: use asyncio + nest_asyncio.
-            Or run LLM calls inside a ThreadPoolExecutor:
-            TODO: remove this when we have a proper async LLM client
-            - Use a queue to handle LLM requests and responses.
-            - Use a separate thread for LLM calls to avoid blocking the main thread.
-            - Use a timeout to avoid waiting indefinitely for LLM responses."""
-        #return self.executor.submit(self.analyze, text)
-        pass
+   
     
 
-    def analyze(self, text, one_word=True, few_shot=False):
+    def analyze(self, text, one_word=True, few_shot=True):
         """Analyze text for emotions using a language model"""
         
         try:
@@ -74,22 +59,20 @@ class TextEmotionRecognizer:
                         top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
                         messages=[
                             {
-                                "role": "system",
-                                "content": (
-                                    "You are an emotion classification assistant. "
-                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
-                                    "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
-                                    "Do NOT add any other text, explanation, or punctuation." # negative constraint
-                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation) from the list."
-                                    "Example:"
-                                    "TEXT: This is so exciting!"
-                                    "EMOTION: happy"
-                                    "TEXT: I'm feeling really down about everything."
-                                    "EMOTION: sad"
-                                    f"TEXT: {text}"
-                                    "EMOTION:"
-                                )
+                            "role": "system",
+                            "content": (
+                                "You are an emotion classification assistant. "
+                                "Always respond with ONLY ONE WORD (lowercase, no punctuation) "
+                                "from: ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                            )
                             },
+                            {"role": "user", "content": "This is so exciting!"},
+                            {"role": "assistant", "content": "happy"},
+                            {"role": "user", "content": "I'm feeling really down about everything."},
+                            {"role": "assistant", "content": "sad"},
+                            {"role": "user", "content": "Why did you do that? I'm so upset!"},
+                            {"role": "assistant", "content": "angry"},
+                            {"role": "user", "content": text},
                             #{"role": "user", "content": "I'm feeling really down about everything."},
                             #{"role": "assistant", "content": "sad"},
                             #{"role": "user", "content": "This is the best day of my life!"},
@@ -159,7 +142,23 @@ class TextEmotionRecognizer:
         return results
         """
         pass
-        
+    
+    def analyze_async(self, text):
+        """Asynchronous method to analyze text for emotions"""
+        """🔹1. LLM Calls Are Blocking Everything
+            💡 Problem:
+            You are calling the LLM synchronously, which blocks the entire program (including UI or video/audio processing) until a reply comes back.
+            ✅ Solution:
+            Use concurrent execution:
+            - Replace synchronous completion() calls with a thread or async wrapper.
+            For Jupyter: use asyncio + nest_asyncio.
+            Or run LLM calls inside a ThreadPoolExecutor:
+            TODO: remove this when we have a proper async LLM client
+            - Use a queue to handle LLM requests and responses.
+            - Use a separate thread for LLM calls to avoid blocking the main thread.
+            - Use a timeout to avoid waiting indefinitely for LLM responses."""
+        #return self.executor.submit(self.analyze, text)
+        pass
 
 
 
