@@ -148,6 +148,7 @@ def algorithm1(
 
     dispersions = calculate_dispersion(X, dispersion_measure)
     sorted_indices = np.argsort(dispersions)[::-1]  # Descending order
+    print(f"Alg. 1: Selected top {m} features out of {d} total features.")
     return sorted_indices[:m]
 
 def algorithm2(
@@ -202,7 +203,8 @@ def algorithm2(
         if similarity < MS:
             selected_features.append(current_feature)
             prev_feature = current_feature
-    
+
+    print(f"Alg. 2: Selected {len(selected_features)} features out of {d} total features.")
     return np.array(selected_features)
 
 class FeatureSelector(BaseEstimator, TransformerMixin):
