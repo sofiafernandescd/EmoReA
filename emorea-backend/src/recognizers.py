@@ -79,13 +79,22 @@ class TextEmotionRecognizer:
                                     "You are an emotion classification assistant. "
                                     "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
                                     "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                    "Do NOT add any other text, explanation, or punctuation." # negative constraint
+                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation) from the list."
+                                    "Example:"
+                                    "TEXT: This is so exciting!"
+                                    "EMOTION: happy"
+                                    "TEXT: I'm feeling really down about everything."
+                                    "EMOTION: sad"
+                                    f"TEXT: {text}"
+                                    "EMOTION:"
                                 )
                             },
-                            {"role": "user", "content": "I'm feeling really down about everything."},
-                            {"role": "assistant", "content": "sad"},
-                            {"role": "user", "content": "This is the best day of my life!"},
-                            {"role": "assistant", "content": "happy"},
-                            {"role": "user", "content": f"{text}\nRemember to respond with only one word from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."}
+                            #{"role": "user", "content": "I'm feeling really down about everything."},
+                            #{"role": "assistant", "content": "sad"},
+                            #{"role": "user", "content": "This is the best day of my life!"},
+                            #{"role": "assistant", "content": "happy"},
+                            #{"role": "user", "content": f"{text}\nRemember to respond with only one word from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."}
                         ]
                     )
                 else:
@@ -101,12 +110,13 @@ class TextEmotionRecognizer:
                         messages=[
                             {
                                 "role": "system",
-                                "content": (
-                                    "You are an emotion classification assistant. "
-                                    f"Given the following dialogue identify the underlying emotion: {text}"
-                                    "You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
-                                    "['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
-                                )
+                                "content": f"Given the following text, identify the underlying emotion. Respond with ONLY ONE WORD (lowercase, no punctuation) from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise'].\n\nText: {text}"
+                                #(
+                                    #"You are an emotion classification assistant. "
+                                    #f"Given the following dialogue identify the underlying emotion: {text}"
+                                    #"You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
+                                    #"['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                #)
                             }]
                     )
 
