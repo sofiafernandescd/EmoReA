@@ -9,6 +9,7 @@
         'PyPDF2>=1.27.5',
         'pandas>=2.3.2',
         'scikit-learn',
+        'seaborn',
         'kagglehub',
         'opencv-python',
         'torch',

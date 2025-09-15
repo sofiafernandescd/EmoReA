@@ -42,7 +42,7 @@ class TextEmotionRecognizer:
    
     
 
-    def analyze(self, text, one_word=True, few_shot=True):
+    def analyze(self, text, one_word=True, few_shot=False):
         """Analyze text for emotions using a language model"""
         
         try:

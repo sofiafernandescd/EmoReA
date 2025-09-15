@@ -149,7 +149,7 @@ def algorithm1(
     dispersions = calculate_dispersion(X, dispersion_measure)
     sorted_indices = np.argsort(dispersions)[::-1]  # Descending order
     print(f"Alg. 1: Selected top {m} features out of {d} total features.")
-    return sorted_indices[:m]
+    return sorted_indices[:m], dispersions
 
 def algorithm2(
     X,
@@ -215,10 +215,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
         self.dispersion_measure = dispersion_measure
         self.similarity_measure = similarity_measure  # Default similarity measure for algorithm2
         self.selected_indices = None
+        self.dispersion_ = None  # Store dispersion values for analysis
         
     def fit(self, X, y=None):
         if self.algorithm == 'algorithm1':
-            self.selected_indices = algorithm1(X, self.L, self.dispersion_measure)
+            self.selected_indices, self.dispersion_ = algorithm1(X, self.L, self.dispersion_measure)
         else:
             self.selected_indices = algorithm2(X, self.L, self.MS, self.dispersion_measure)
         return self
@@ -277,3 +278,46 @@ if __name__ == "__main__":
     print(f"Total time for all runs: {end - start0:.4f} seconds")
 
 
+
+# =========================
+# Visualization Utilities
+# =========================
+
+def plot_dispersion_ranking(dispersions: np.ndarray, selected: np.ndarray, measure: str):
+    """Bar plot of feature relevance (dispersion values)."""
+    plt.figure(figsize=(12, 6))
+    indices = np.argsort(dispersions)[::-1]
+    plt.bar(range(len(dispersions)), dispersions[indices], alpha=0.7, label="All features")
+    plt.bar(
+        [np.where(indices == i)[0][0] for i in selected],
+        dispersions[selected],
+        color="red",
+        label="Selected features",
+    )
+    plt.xlabel("Ranked feature index")
+    plt.ylabel(f"Dispersion ({measure})")
+    plt.title(f"Feature Relevance Ranking ({measure})")
+    plt.legend()
+    plt.show()
+
+
+def plot_similarity_heatmap(X: np.ndarray, measure: str, selected = None):
+    """Heatmap of feature similarity matrix."""
+    n_features = X.shape[1]
+    sim_matrix = np.zeros((n_features, n_features))
+
+    for i in range(n_features):
+        for j in range(i, n_features):
+            sim_matrix[i, j] = sim_matrix[j, i] = calculate_similarity(X[:, i], X[:, j], measure)
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(sim_matrix, cmap="viridis", aspect="auto")
+    plt.colorbar(label="Similarity")
+    plt.title(f"Feature Similarity Matrix ({measure})")
+
+    if selected is not None:
+        for i in selected:
+            plt.axhline(i, color="red", linestyle="--", alpha=0.5)
+            plt.axvline(i, color="red", linestyle="--", alpha=0.5)
+
+    plt.show()
