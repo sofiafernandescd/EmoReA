@@ -42,7 +42,7 @@ class TextEmotionRecognizer:
    
     
 
-    def analyze(self, text, one_word=True, few_shot=False):
+    def analyze(self, text, one_word=True, few_shot=False, emo_list=['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']):
         """Analyze text for emotions using a language model"""
         
         try:
@@ -63,7 +63,7 @@ class TextEmotionRecognizer:
                             "content": (
                                 "You are an emotion classification assistant. "
                                 "Always respond with ONLY ONE WORD (lowercase, no punctuation) "
-                                "from: ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                f"from: {str(emo_list)}."
                             )
                             },
                             {"role": "user", "content": "This is so exciting!"},
@@ -93,7 +93,7 @@ class TextEmotionRecognizer:
                         messages=[
                             {
                                 "role": "system",
-                                "content": f"Given the following text, identify the underlying emotion. Respond with ONLY ONE WORD (lowercase, no punctuation) from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise'].\n\nText: {text}"
+                                "content": f"Given the following text, identify the underlying emotion. Respond with ONLY ONE WORD (lowercase, no punctuation) from {str(emo_list)}.\n\nText: {text}"
                                 #(
                                     #"You are an emotion classification assistant. "
                                     #f"Given the following dialogue identify the underlying emotion: {text}"
@@ -103,8 +103,8 @@ class TextEmotionRecognizer:
                             }]
                     )
 
-                emos = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
-                if response.choices[0].message.content.strip() not in emos:
+                #emos = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
+                if response.choices[0].message.content.strip() not in emo_list:
                     return 'neutral'
 
             else:

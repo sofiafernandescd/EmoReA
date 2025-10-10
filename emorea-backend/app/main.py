@@ -2,7 +2,7 @@
  # @ Author: Sofia Condesso (50308)
  # @ Create Time: 2025-04-09 15:31:30
  # @ Description: This is the main file for the FastAPI application of 
- #                  Emotion Recognition in Multimedia Content Project.
+ #                  Emotion Recognition in Multimedia Content TFM.
  # @ References: 
  #       - FastAPI documentation: https://fastapi.tiangolo.com/
  #       - https://faun.pub/mastering-api-documentation-in-python-fastapi-best-practices-for-maintainable-and-readable-code-2425f9d734f7

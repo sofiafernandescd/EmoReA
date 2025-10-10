@@ -25,7 +25,7 @@
         'PyPDF2',
         'python-docx',
         'moviepy',
-        'matplotlib',
+        'matplotlib==3.5.3',
         'opensmile',
         'litellm',
         'deepface',
