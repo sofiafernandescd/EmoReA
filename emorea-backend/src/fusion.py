@@ -39,4 +39,14 @@ class LateFusion:
         final_emotion = max(weighted_counts, key=weighted_counts.get)
         
         return final_emotion
+    
+    def neutral_decision_fusion(self, results):
+        """Simple rule-based fusion: override neutral with non-neutral"""
+        if "text" in results and results["text"] != "neutral":
+            return results["text"]
+        if "speech" in results and results["speech"] != "neutral":
+            return results["speech"]
+        if "face" in results and results["face"].get("dominant_emotion") != "neutral":
+            return results["face"]["dominant_emotion"]
+        return "neutral"
         

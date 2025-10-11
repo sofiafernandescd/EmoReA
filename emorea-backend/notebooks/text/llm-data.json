@@ -24,10 +24,6 @@
         "output": "sad"
     },
     {
-        "input": "Classify this sentence with one of the emotions: angry, sad, happy, surprise, fear, disgust or neutral.\nive been taking or milligrams or times recommended amount and ive fallen asleep a lot faster but i also feel like so funny",
-        "output": NaN
-    },
-    {
         "input": "Classify this sentence with one of the emotions: angry, sad, happy, surprise, fear, disgust or neutral.\ni feel as confused about life as a teenager or as jaded as a year old man",
         "output": "fear"
     },

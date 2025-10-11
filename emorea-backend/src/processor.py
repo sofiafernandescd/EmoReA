@@ -17,7 +17,7 @@ class FileProcessor:
             'image': ['jpg', 'jpeg', 'png'],
             'video': ['mp4', 'avi', 'mov', 'webm']
         }
-        self.face_cascade = None        
+        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')      
         self.transcriber = whisper.load_model("base") 
 
     def process_file(self, file_path):
@@ -33,10 +33,8 @@ class FileProcessor:
             elif file_type == 'audio':
                 return self._process_audio(file_path)
             elif file_type == 'image':
-                self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
                 return self._process_image(file_path)
             elif file_type == 'video':
-                self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
                 return self._process_video(file_path)
             else:
                 return {"error": "Unsupported file type"}
@@ -69,12 +67,13 @@ class FileProcessor:
 
         return {"text": text}
 
-    def _process_audio(self, file_path, chunk_duration=3, hop_duration=1):
+    def _process_audio(self, file_path, window=3, hop=1):
         """Load audio files and transcribe them"""
-        audio, sr = librosa.load(file_path, sr=16000)
-        # tracribe audio and split into segments
+
+        audio, sr = librosa.load(file_path, sr=32000)
+        # tracribe audio and split into text segments and audio chunks
         transcript = self.transcriber.transcribe(audio)
-        segments = transcript['segments']
+        segments = [{'start': seg['start'], 'end': seg['end'], 'text': seg['text']} for seg in transcript['segments']]
         audio_chunks = [audio[int(seg['start'] * sr):int(seg['end'] * sr)] for seg in segments]
 
         return {
@@ -139,4 +138,16 @@ class FileProcessor:
         cap.release()
         result["frames"] = frames
         return result
+    
+    def transcribe_async(self, audio):
+        """Asynchronous method to transcribe audio using Whisper"""
+        """
+            Whisper transcription is done inline with transcribe(audio), which is blocking.
+            Suggestion:
+            Transcribe first to segments (timestamps), then process audio in chunks later or in parallel.
+            Use a thread or async wrapper to handle transcription without blocking the main thread.
+        """
+        #thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
+        #thread.start()
+        pass
 

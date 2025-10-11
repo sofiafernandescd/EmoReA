@@ -21,6 +21,7 @@ import opensmile
 #import threading
 import librosa
 import cv2
+import json
 
 
 class TextEmotionRecognizer:
@@ -119,8 +120,67 @@ class TextEmotionRecognizer:
         except Exception as e:
             return {"error": str(e)}
         
+    def analyze_with_scores(self, text, emo_list=None):
+        """
+        Ask the LLM to return scores/probabilities for all emotions.
+        Returns a dict: {emotion: score, ...}
+        """
+        if emo_list is None:
+            emo_list = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
 
-    def batch_analyze(self, texts, one_word=True, max_workers=4):
+        try:
+            # Prompt the LLM to output JSON or a structured format
+            prompt = (
+                f"Given the following text, provide a score between 0 and 1 "
+                f"for each emotion in {emo_list}. Ensure the sum of scores is 1. "
+                f"Respond ONLY with a JSON dictionary. Text: \"{text}\""
+            )
+
+            response = completion(
+                model=f"ollama/{self.llm_model}",
+                api_base="http://localhost:11434",
+                api_key="ollama",
+                temperature=0.0,
+                top_p=1.0,
+                messages=[{"role": "system", "content": "You are an emotion scoring assistant."},
+                          {"role": "user", "content": prompt}]
+            )
+
+            raw_output = response.choices[0].message.content.strip()
+
+            # parse JSON
+            try:
+                scores = json.loads(raw_output)
+            except json.JSONDecodeError:
+                # fallback: try eval (careful!)
+                scores = eval(raw_output)
+
+            # all emotions are present
+            scores = {emo: float(scores.get(emo, 0.0)) for emo in emo_list}
+
+            # normalize to sum=1
+            #total = sum(scores.values())
+            #if total > 0:
+            #    scores = {emo: val/total for emo, val in scores.items()}
+
+            return scores
+
+        except Exception as e:
+            return {"error": str(e)}
+        
+    def analyze_async(self, text):
+        """Asynchronous method to analyze text for emotions"""
+        """
+            Use concurrent execution:
+            - Replace synchronous completion() calls with a thread or async wrapper.
+            For Jupyter: use asyncio + nest_asyncio.
+            Or run LLM calls inside a ThreadPoolExecutor:
+            TODO: remove this when we have a proper async LLM client
+            - Use a queue to handle LLM requests and responses.
+            - Use a separate thread for LLM calls to avoid blocking the main thread.
+            - Use a timeout to avoid waiting indefinitely for LLM responses."""
+        #return self.executor.submit(self.analyze, text)
+
         """
         Analyze a list of texts asynchronously using threads.
         Returns a list of predicted emotions in the same order as input.
@@ -142,23 +202,6 @@ class TextEmotionRecognizer:
         return results
         """
         pass
-    
-    def analyze_async(self, text):
-        """Asynchronous method to analyze text for emotions"""
-        """🔹1. LLM Calls Are Blocking Everything
-            💡 Problem:
-            You are calling the LLM synchronously, which blocks the entire program (including UI or video/audio processing) until a reply comes back.
-            ✅ Solution:
-            Use concurrent execution:
-            - Replace synchronous completion() calls with a thread or async wrapper.
-            For Jupyter: use asyncio + nest_asyncio.
-            Or run LLM calls inside a ThreadPoolExecutor:
-            TODO: remove this when we have a proper async LLM client
-            - Use a queue to handle LLM requests and responses.
-            - Use a separate thread for LLM calls to avoid blocking the main thread.
-            - Use a timeout to avoid waiting indefinitely for LLM responses."""
-        #return self.executor.submit(self.analyze, text)
-        pass
 
 
 
@@ -175,18 +218,6 @@ class SpeechEmotionRecognizer:
             self.model = None
             print(f"Error loading speech emotion recognizer: {e}")
 
-    def transcribe_async(self, audio):
-        """Asynchronous method to transcribe audio using Whisper"""
-        """🔹2. Synchronous Whisper Usage
-            Whisper transcription is done inline with transcribe(audio), which is blocking.
-
-            ✅ Suggestion:
-            Transcribe first to segments (timestamps), then process audio in chunks later or in parallel.
-            Use a thread or async wrapper to handle transcription without blocking the main thread.
-        """
-        #thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
-        #thread.start()
-        pass
 
     def extract_features_opensmile(self, audio, sr):
         smile = opensmile.Smile(
@@ -197,7 +228,7 @@ class SpeechEmotionRecognizer:
         return features.values
     
     # Feature extraction func
-    def extract_audio_features(self, audio, sr, mfcc=True, chroma=True, mel=True):
+    def extract_audio_features_2d(self, audio, sr, mfcc=True, chroma=True, mel=True):
         feats = []
         if mfcc:
             mf = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)
@@ -209,6 +240,31 @@ class SpeechEmotionRecognizer:
         if mel:
             mel = librosa.feature.melspectrogram(y=audio, sr=sr)
             feats.append(np.mean(mel.T, axis=0))
+        return np.array(feats)
+    
+    # Feature extraction func
+    def extract_audio_features(self, audio, sr, mfcc=True, chroma=True, mel=True, spectral=True):
+        feats = []
+        if mfcc:
+            mf = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
+            #feats.append(np.array(np.mean(mf.T, axis=0)))
+            feats.extend(np.mean(mf, axis=1))
+        if chroma:
+            st = np.abs(librosa.stft(audio))
+            ch = librosa.feature.chroma_stft(S=st, sr=sr)
+            #feats.append(np.mean(ch.T, axis=0))
+            feats.extend(np.mean(ch, axis=1))
+        if mel:
+            mel = librosa.feature.melspectrogram(y=audio, sr=sr)
+            feats.extend(np.mean(mel.T, axis=0))
+
+        if spectral:
+            centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+            bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
+            flatness = librosa.feature.spectral_flatness(y=y)
+            feats.extend([
+                np.mean(centroid), np.mean(bandwidth), np.mean(flatness)
+            ])
         return np.array(feats)
 
     def analyze(self, audio, sr):
@@ -269,9 +325,8 @@ class FaceEmotionRecognizer:
             return {'error': str(e)}
 
     def analyze_video_frames(self, frames):
-        """🔹5. Video Face Detection Needs Optimization
-            You detect face on every N-th frame, but DeepFace will still be slow.
-            ✅ Suggestions:
+        """Analize frames extracted from video."""
+        """ TODO:
             Resize frames before detection: frame = cv2.resize(frame, (320, 240))
             Add a max_faces or confidence_threshold to reduce false positives
             Consider face_recognizer.analyze_video_frames(frames[:10]) to limit evaluation on very long videos
