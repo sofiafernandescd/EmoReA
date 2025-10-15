@@ -41,9 +41,8 @@ This repository contains the FastAPI backend API for the EmoReA (Emotion Recogni
 For local development using Uvicorn:
 
 ```bash
-poetry run uvicorn main:app --reload
-# or
-source venv/bin/activate && uvicorn main:app --reload
+uvicorn app.main:app --reload
+
 ```
 The backend API will be accessible at http://localhost:8000. FastAPI also provides automatic API documentation at /docs and /redoc when the server is running.
 
@@ -98,6 +97,7 @@ Your system is well-structured and modular, nicely separating concerns into `Fil
 But you’re now reaching the complexity where **scalability, performance, and maintainability** become essential. Below is a comprehensive critique — **strengths**, **weaknesses**, **concrete suggestions**, and **improvements to LLM usage**.
 
 ---
+(AI GENERATED)
 
 ### ✅ STRENGTHS
 
@@ -115,7 +115,7 @@ But you’re now reaching the complexity where **scalability, performance, and m
 
 ---
 
-### ❌ WEAKNESSES & IMPROVEMENTS
+### ❌ WEAKNESSES & IMPROVEMENTS 
 
 #### 🔹1. **LLM Calls Are Blocking Everything**
 

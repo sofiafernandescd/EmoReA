@@ -35,8 +35,8 @@ class FileProcessor:
             elif file_type == 'image':
                 return self._process_image(file_path)
             elif file_type == 'video':
-                #return self._process_video(file_path)
-                return self._process_audio(file_path)
+                return self._process_video(file_path)
+                #return self._process_audio(file_path)
             else:
                 return {"error": "Unsupported file type"}
         except Exception as e:

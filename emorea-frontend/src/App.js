@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import EmotionRecognition from './components/EmotionRecognition';
+import EmotionRecognition from './components/EmotionRecognition/EmotionRecognition';
 
 function App() {
   return (
