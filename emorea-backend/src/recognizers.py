@@ -23,6 +23,46 @@ import librosa
 import cv2
 import json
 
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import torch.nn.functional as F
+
+
+class TextEmotionRecognizerHF:
+    def __init__(self, model_path="./emotion_model_distilbert", device=None):
+        """
+        Load a fine-tuned Hugging Face emotion recognition model.
+        """
+        self.device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
+        self.tok = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.model.to(self.device)
+        self.model.eval()
+
+        # keep the label mappings for interpretability
+        self.id2label = self.model.config.id2label
+        self.label2id = self.model.config.label2id
+
+    def analyze(self, text):
+        """
+        Return the predicted emotion label for the input text.
+        """
+        inputs = self.tok(text, return_tensors="pt", truncation=True, max_length=128).to(self.device)
+        with torch.no_grad():
+            logits = self.model(**inputs).logits
+        pred_id = torch.argmax(logits, dim=-1).item()
+        return self.id2label[pred_id]
+
+    def analyze_with_scores(self, text):
+        """
+        Return emotion probabilities (softmax scores) for the input text.
+        """
+        inputs = self.tok(text, return_tensors="pt", truncation=True, max_length=128).to(self.device)
+        with torch.no_grad():
+            logits = self.model(**inputs).logits
+        probs = F.softmax(logits, dim=-1).cpu().numpy().flatten()
+        return {self.id2label[i]: float(p) for i, p in enumerate(probs)}
+
 
 class TextEmotionRecognizer:
     def __init__(self, 

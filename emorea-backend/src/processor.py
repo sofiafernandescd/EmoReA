@@ -35,7 +35,8 @@ class FileProcessor:
             elif file_type == 'image':
                 return self._process_image(file_path)
             elif file_type == 'video':
-                return self._process_video(file_path)
+                #return self._process_video(file_path)
+                return self._process_audio(file_path)
             else:
                 return {"error": "Unsupported file type"}
         except Exception as e:
@@ -70,7 +71,7 @@ class FileProcessor:
     def _process_audio(self, file_path, window=3, hop=1):
         """Load audio files and transcribe them"""
 
-        audio, sr = librosa.load(file_path, sr=32000)
+        audio, sr = librosa.load(file_path, sr=16000)
         # tracribe audio and split into text segments and audio chunks
         transcript = self.transcriber.transcribe(audio)
         segments = [{'start': seg['start'], 'end': seg['end'], 'text': seg['text']} for seg in transcript['segments']]

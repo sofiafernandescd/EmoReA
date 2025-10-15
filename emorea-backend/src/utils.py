@@ -23,6 +23,7 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 import json
+import re
 module_path = os.path.abspath(os.path.join('..', '..')) # or the path to your source code
 sys.path.insert(0, module_path)
 
@@ -402,7 +403,7 @@ def load_affectnet():
     return df
 
 ###### MER DATASETS #######
-def load_iemocap():
+def load_iemocap_old():
     """
     The IEMOCAP (Interactive Emotional Motion Capture) dataset is a multimodal dataset that contains audio, video, and motion capture recordings of actors performing emotional dialogues. 
     It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
@@ -436,6 +437,59 @@ def load_iemocap():
         
     return df
 
+def load_iemocap():
+    """
+    Loads IEMOCAP with emotion labels and transcriptions.
+    Returns:
+        pd.DataFrame with columns ['filename', 'label', 'transcription']
+    """
+    # Download dataset
+    file_path = kagglehub.dataset_download("dejolilandry/iemocapfullrelease")
+    labels_path = kagglehub.dataset_download("samuelsamsudinng/iemocap-emotion-speech-database")
+    labels_csv = os.path.join(labels_path, "iemocap_full_dataset.csv")
+
+    # Load label CSV
+    labels_df = pd.read_csv(labels_csv)
+    emos = {
+        'neu': 'neutral',
+        'sad': 'sad',
+        'ang': 'angry',
+        'hap': 'happy',
+        'sur': 'surprise',
+        'fea': 'fear',
+        'dis': 'disgust'
+    }
+    labels_df['label'] = labels_df['emotion'].map(emos)
+
+    # Build absolute file paths
+    labels_df['filename'] = labels_df['path'].apply(
+        lambda x: os.path.join(file_path, "IEMOCAP_full_release", x)
+    )
+
+    # --- Extract transcriptions ---
+    transcriptions = {}
+
+    dialog_root = os.path.join(file_path, "IEMOCAP_full_release")
+    for sess in range(1, 6):
+        trans_dir = os.path.join(dialog_root, f"Session{sess}", "dialog", "transcriptions")
+        if not os.path.exists(trans_dir):
+            continue
+        for txt_file in os.listdir(trans_dir):
+            if not txt_file.endswith(".txt"):
+                continue
+            with open(os.path.join(trans_dir, txt_file), "r", encoding="utf-8") as f:
+                for line in f:
+                    match = re.match(r"^(Ses\d+[FM]\d+)\s+\[[^\]]+\]:\s*(.*)", line.strip())
+                    if match:
+                        utt_id, text = match.groups()
+                        transcriptions[utt_id] = text.strip()
+
+    # --- Merge transcriptions into dataframe ---
+    labels_df['utterance_id'] = labels_df['path'].apply(lambda p: os.path.splitext(os.path.basename(p))[0])
+    labels_df['transcription'] = labels_df['utterance_id'].map(transcriptions)
+
+    # Return final dataframe
+    return labels_df[['filename', 'label', 'transcription']]
 
 def load_meld(split='test'):
     """

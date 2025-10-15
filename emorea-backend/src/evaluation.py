@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
+import pandas as pd
+from jiwer import process_words, wer
+import re
 
 def plot_confusion_matrix(y_true, y_pred, labels=None, title="Confusion Matrix"):
     """
@@ -51,3 +54,46 @@ def plot_confusion_matrix(y_true, y_pred, labels=None, title="Confusion Matrix")
     ax.set_xlabel("Predicted label")
     plt.tight_layout()
     plt.show()
+
+
+###### TER ######
+
+def normalize_text(text):
+    # lowercase
+    text = text.lower()
+    
+    # remove punctuation and special characters (keep words and spaces)
+    text = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
+    
+    # remove extra whitespace
+    text = re.sub(r"\s+", " ", text).strip()
+
+    if len(text)==0:
+        text = "NA"
+    
+    return text
+
+# Function to compute WER metrics for each pair
+def compute_wer_metrics(row, ref_col="Utterance", hyp_col="text"):
+    """Compute WER and related metrics for a row with 'Utterance' and 'text' columns."""
+    ref = row[ref_col]
+    hyp = row[hyp_col]
+
+    measures = process_words(ref, hyp)
+    return pd.Series({
+        "WER": measures.wer,
+        "S_ratio": measures.substitutions / len(measures.references[0]),
+        "D_ratio": measures.deletions / len(measures.references[0]),
+        "I_ratio": measures.insertions / len(measures.references[0]),
+        "Hits_ratio": measures.hits / len(measures.references[0]) 
+    })
+
+def global_wer(df, ref_col="Utterance", hyp_col="text"):
+
+    ref_corpus = " ".join(df[ref_col])
+    hyp_corpus = " ".join(df[hyp_col])
+
+    global_wer = wer(ref_corpus, hyp_corpus)
+    print(f"Global WER: {global_wer:.3f}")
+
+    return global_wer

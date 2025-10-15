@@ -23,6 +23,7 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 import json
+import re
 module_path = os.path.abspath(os.path.join('..', '..')) # or the path to your source code
 sys.path.insert(0, module_path)
 
@@ -103,7 +104,36 @@ def load_isear():
     print(f"Loaded {len(df)} samples from ISEAR dataset")
     return df
 
+def load_daily_dialog(split="test"):
 
+    diag_path = os.path.join(module_path, 'data', 'DailyDialog', split, f'dialogues_{split}.txt')
+    emo_path = os.path.join(module_path, 'data', 'DailyDialog', split, f'dialogues_emotion_{split}.txt')
+
+    emotion_map = {
+        0: "neutral",
+        1: "angry",
+        2: "disgust",
+        3: "fear",
+        4: "happy",
+        5: "sad",
+        6: "surprise",
+    }
+
+    dialogs, emotions = [], []
+
+    with open(diag_path, 'r', encoding='utf-8') as f_d, open(emo_path, 'r', encoding='utf-8') as f_e:
+        for d_line, e_line in zip(f_d, f_e):
+            # Split dialogue into utterances
+            utterances = [u.strip() for u in d_line.strip().split('__eou__') if u.strip()]
+            # Split emotions into integers
+            emo_ids = [int(e) for e in e_line.strip().split() if e.strip()]
+            
+            # Align each utterance with its emotion
+            for utt, emo_id in zip(utterances, emo_ids):
+                dialogs.append(utt)
+                emotions.append(emotion_map[emo_id])
+
+    return pd.DataFrame({'text': dialogs, 'label': emotions})
 
 ######### SER Datasets #########
 def load_emodb():
@@ -332,7 +362,16 @@ def load_fer2013():
     print("First few rows of the dataframe:")
     print(df_fer.head())
 
-    
+    label_to_text = {
+        0:'angry', 
+        1:'disgust', 
+        2:'fear', 
+        3:'happy', 
+        4: 'sad', 
+        5: 'surprise', 
+        6: 'neutral'
+    }
+
     
     df_fer['label'] = df_fer['emotion'].map(label_to_text)
     
@@ -404,23 +443,17 @@ def load_affectnet():
 ###### MER DATASETS #######
 def load_iemocap():
     """
-    The IEMOCAP (Interactive Emotional Motion Capture) dataset is a multimodal dataset that contains audio, video, and motion capture recordings of actors performing emotional dialogues. 
-    It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
-    The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Loads IEMOCAP with emotion labels and transcriptions.
     Returns:
-        pd.DataFrame: DataFrame with columns ['filename', 'label']
+        pd.DataFrame with columns ['filename', 'label', 'transcription']
     """
     # Download dataset
     file_path = kagglehub.dataset_download("dejolilandry/iemocapfullrelease")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
-
     labels_path = kagglehub.dataset_download("samuelsamsudinng/iemocap-emotion-speech-database")
-    labels_path = os.path.join(labels_path, "iemocap_full_dataset.csv")
-    # Load the labels CSV file
-    labels_df = pd.read_csv(labels_path)
-    #allowed_emotions = ['neu', 'sad', 'ang', 'hap', 'sur', 'fea', 'dis']
-    #df = labels_df[labels_df['label'].isin(allowed_emotions)].copy()#.sample(100)
+    labels_csv = os.path.join(labels_path, "iemocap_full_dataset.csv")
+
+    # Load label CSV
+    labels_df = pd.read_csv(labels_csv)
     emos = {
         'neu': 'neutral',
         'sad': 'sad',
@@ -430,12 +463,40 @@ def load_iemocap():
         'fea': 'fear',
         'dis': 'disgust'
     }
-    df = labels_df.copy()
-    df['label'] = df['emotion'].map(emos)
-    df['filename'] = df['path'].apply(lambda x: os.path.join(file_path, "IEMOCAP_full_release", x))
-        
-    return df
+    labels_df['label'] = labels_df['emotion'].map(emos)
 
+    # Build absolute file paths
+    labels_df['filename'] = labels_df['path'].apply(
+        lambda x: os.path.join(file_path, "IEMOCAP_full_release", x)
+    )
+
+    # --- Extract transcriptions ---
+    transcriptions = {}
+
+    dialog_root = os.path.join(file_path, "IEMOCAP_full_release")
+    for sess in range(1, 6):
+        trans_dir = os.path.join(dialog_root, f"Session{sess}", "dialog", "transcriptions")
+        if not os.path.exists(trans_dir):
+            print("No dir")
+            continue
+        for txt_file in os.listdir(trans_dir):
+            if not txt_file.endswith(".txt"):
+                print("No file:", txt_file)
+                continue
+            with open(os.path.join(trans_dir, txt_file), "r", encoding="utf-8") as f:
+                for line in f:
+                    #match = re.match(r"^(Ses\d+[FM]\d+)\s+\[[^\]]+\]:\s*(.*)", line.strip())
+                    match = re.match(r"^(Ses\d+[^ ]+)\s+\[[^\]]+\]:\s*(.*)", line.strip())
+                    if match:
+                        utt_id, text = match.groups()
+                        transcriptions[utt_id] = text.strip()
+
+    # --- Merge transcriptions into dataframe ---
+    labels_df['utterance_id'] = labels_df['path'].apply(lambda p: os.path.splitext(os.path.basename(p))[0])
+    labels_df['transcription'] = labels_df['utterance_id'].map(transcriptions)
+
+    # Return final dataframe
+    return labels_df
 
 def load_meld(split='test'):
     """
