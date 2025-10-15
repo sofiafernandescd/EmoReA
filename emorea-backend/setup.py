@@ -29,7 +29,8 @@
         'opensmile',
         'litellm',
         'deepface',
-        'gensim'
+        'gensim',
+        'jiwer'
 
     ],
 """
