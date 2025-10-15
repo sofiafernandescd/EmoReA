@@ -312,7 +312,44 @@ def load_ravdess():
 
 
 def load_savee():
-    pass
+    """
+    Load and organize the SAVEE emotion dataset.
+    
+    Returns:
+        pd.DataFrame: DataFrame with columns ['file_path', 'emotion']
+    """
+    # Download dataset from Kaggle
+    path = kagglehub.dataset_download("ejlok1/surrey-audiovisual-expressed-emotion-savee")
+    data_path = os.path.join(path, "ALL")
+
+    # Emotion mapping based on filename prefix
+    # Example filenames: DC_a01.wav, DC_h10.wav, etc.
+    emotion_map = {
+        'a': 'angry',
+        'd': 'disgust',
+        'f': 'fear',
+        'h': 'happy',
+        'n': 'neutral',
+        'sa': 'sad',
+        'su': 'surprise'
+    }
+
+    # Collect all .wav files and decode labels
+    data = []
+    for file in os.listdir(data_path):
+        if file.endswith(".wav"):
+            name = file.split(".")[0]
+            # Extract emotion code (e.g., 'a' or 'sa')
+            emo_code = name.split("_")[1]
+            # Handle multi-letter codes (like 'sa' for sad)
+            emo_label = emotion_map.get(emo_code, 'unknown')
+            file_path = os.path.join(data_path, file)
+            data.append({"file_path": file_path, "emotion": emo_label})
+
+    df = pd.DataFrame(data)
+    print(f"Loaded {len(df)} audio files from SAVEE.")
+    print(df["emotion"].value_counts())
+    return df
 
 
 ######### FER Datasets #########
@@ -516,6 +553,9 @@ def load_meld(split='test'):
     elif split=='train':
         raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "train", "train_splits")
         labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "train", "train_sent_emo.csv")
+    elif split=='dev':
+        raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "dev", "dev_splits_complete")
+        labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "dev_sent_emo.csv")
     files = os.listdir(raw_path)
     # scan the directory 
     print("Subfolders in the raw data:", files)
