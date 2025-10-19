@@ -321,6 +321,7 @@ def load_savee():
     # Download dataset from Kaggle
     path = kagglehub.dataset_download("ejlok1/surrey-audiovisual-expressed-emotion-savee")
     data_path = os.path.join(path, "ALL")
+    print([x for x in os.listdir(data_path)])
 
     # Emotion mapping based on filename prefix
     # Example filenames: DC_a01.wav, DC_h10.wav, etc.
@@ -340,16 +341,48 @@ def load_savee():
         if file.endswith(".wav"):
             name = file.split(".")[0]
             # Extract emotion code (e.g., 'a' or 'sa')
-            emo_code = name.split("_")[1]
+            emo_code = name.split("_")[1][:-2]
             # Handle multi-letter codes (like 'sa' for sad)
             emo_label = emotion_map.get(emo_code, 'unknown')
             file_path = os.path.join(data_path, file)
-            data.append({"file_path": file_path, "emotion": emo_label})
+            data.append({"filename": file_path, "label": emo_label})
 
     df = pd.DataFrame(data)
     print(f"Loaded {len(df)} audio files from SAVEE.")
-    print(df["emotion"].value_counts())
+    
     return df
+
+def load_interspeech():
+
+    # Download dataset from Kaggle
+    path = kagglehub.dataset_download("rushirbhavsar/inter-speech-ds")
+    print("Path to dataset files:", path)
+
+    # Define the dataset directory
+    ravdess_path = path + "/**/*.wav"
+
+    # Codebook that maps RAVDESS filename encoding to emotions
+    emotion_map = {
+        '01': 'neutral',
+        '02': 'calm',
+        '03': 'happy',
+        '04': 'sad',
+        '05': 'angry',
+        '06': 'fearful',
+        '07': 'disgust',
+        '08': 'surprised'
+    }
+
+    # Extract emotion labels from filenames
+    filenames = glob.glob(ravdess_path, recursive=True)
+    emotions = [emotion_map[os.path.basename(f).split('-')[2]] for f in filenames if os.path.basename(f).split('-')[2] in emotion_map]
+
+    # Create a DataFrame to store the emotion labels
+    emo_db = pd.DataFrame({
+        'filename': filenames,
+        'label': emotions
+    })
+    return emo_db
 
 
 ######### FER Datasets #########

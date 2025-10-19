@@ -94,8 +94,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
                     centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
                     bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
                     flatness = librosa.feature.spectral_flatness(y=y)
+                    contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+                    rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)
                     file_feats.extend([
-                        np.mean(centroid), np.mean(bandwidth), np.mean(flatness)
+                        np.mean(centroid), np.mean(bandwidth), np.mean(flatness), np.mean(contrast), np.mean(rolloff)
                     ])
 
                 feats.append(file_feats)
@@ -104,3 +106,55 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
 
         else:
             raise ValueError(f"Invalid method: {self.method}")
+
+
+
+#### UTIL ####
+def extract_features(y, sr=16000, n_mfcc=13, frame_length=2048, hop_length=512):
+    features = {}
+
+    # 1. MFCCs + delta
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, n_fft=frame_length, hop_length=hop_length)
+    delta_mfcc = librosa.feature.delta(mfcc)
+    features['mfcc'] = mfcc
+    features['delta_mfcc'] = delta_mfcc
+
+    # 2. Chroma
+    features['chroma'] = librosa.feature.chroma_stft(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+
+    # 3. Mel-spectrogram
+    mel = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+    features['mel'] = librosa.power_to_db(mel)
+
+    # 4. RMS energy
+    features['rms'] = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)
+
+    # 5. Zero Crossing Rate
+    features['zcr'] = librosa.feature.zero_crossing_rate(y, frame_length=frame_length, hop_length=hop_length)
+
+    # 6. Spectral features
+    features['spectral_centroid'] = librosa.feature.spectral_centroid(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+    features['spectral_bandwidth'] = librosa.feature.spectral_bandwidth(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+    features['spectral_contrast'] = librosa.feature.spectral_contrast(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+    features['spectral_rolloff'] = librosa.feature.spectral_rolloff(y=y, sr=sr, n_fft=frame_length, hop_length=hop_length)
+    features['spectral_flatness'] = librosa.feature.spectral_flatness(y=y, n_fft=frame_length, hop_length=hop_length)
+
+    return features
+
+
+def aggregate_features(features_dict):
+    """Transforms 2D features in 1D vectors with mean and stand. dev."""
+    agg_features = []
+    for key, feat in features_dict.items():
+        agg_features.append(np.mean(feat, axis=1))
+        agg_features.append(np.std(feat, axis=1))
+    return np.concatenate(agg_features)
+
+def extract_ser_features(file_path):
+    """Extracts and aggregates acoustic features"""
+ 
+    y, sr = librosa.load(file_path, sr=16000)
+    features = extract_features(y, sr)
+    X = aggregate_features(features)
+
+    return X
