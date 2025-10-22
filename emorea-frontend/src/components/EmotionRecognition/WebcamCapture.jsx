@@ -29,7 +29,7 @@ const WebcamCapture = ({ onAnalysisComplete }) => {
     setRecording(false);
     mediaRecorderRef.current.stopRecording(async () => {
       const blob = mediaRecorderRef.current.getBlob();
-      const result = await analyzeFile(new File([blob], "video/mp4"));
+      const result = await analyzeFile(new File([blob], "video.mp4"));
       onAnalysisComplete(result);
       setPreview(URL.createObjectURL(blob));
     });

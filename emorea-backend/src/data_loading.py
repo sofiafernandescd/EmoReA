@@ -468,11 +468,12 @@ def load_rafbd(folder="test"):
 
     df_raf['emo'] = df_raf['label']
     df_raf['label'] = df_raf['emo'].map(emotion_map)
-    raf_imgs = []
+    raf_imgs, filenames = [], []
     # read images from each of the folders in column "label"
     for i in tqdm(range(len(df_raf))):
         folder = str(df_raf.iloc[i]['emo'])
         img_path = os.path.join(imgs_path, folder, df_raf.iloc[i]['image'])
+        filenames.append(img_path)
         if os.path.exists(img_path):
             img = cv2.imread(img_path)
             if img is not None:
@@ -482,6 +483,7 @@ def load_rafbd(folder="test"):
                 raf_imgs.append("Missing image")
 
     df_raf['pixels'] = raf_imgs
+    df_raf['filename'] = filenames
     return df_raf
 
 def load_affectnet():
@@ -573,6 +575,8 @@ def load_meld(split='test'):
     The MELD (Multimodal EmotionLines Dataset) is a dataset that contains audio, video, and text data from conversations in TV series. 
     It includes a wide range of emotions such as happiness, sadness, anger, fear, surprise, and disgust.
     The dataset is widely used for training and evaluating models in multimodal emotion recognition tasks.
+    Parameters:
+        split: name of the split ('train', 'dev', 'test'), defaults to 'test'
     Returns:
         pd.DataFrame: DataFrame with columns ['filename', 'label']
     """

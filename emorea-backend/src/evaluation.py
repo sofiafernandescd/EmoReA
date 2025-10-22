@@ -5,6 +5,7 @@ import pandas as pd
 from jiwer import process_words, wer
 import re
 
+#### CONFUSION MATRIX #####
 def plot_confusion_matrix(y_true, y_pred, labels=None, title="Confusion Matrix"):
     """
     Plots a confusion matrix with percentages as colors 
@@ -21,18 +22,14 @@ def plot_confusion_matrix(y_true, y_pred, labels=None, title="Confusion Matrix")
     if labels is None:
         labels = np.unique(y_true)
 
-    # Normalize row-wise to percentages
+    # get percentages
     cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
     cm_percent = np.nan_to_num(cm_percent)  # handle divide by zero
 
     fig, ax = plt.subplots(figsize=(6, 5))
     im = ax.imshow(cm_percent, interpolation="nearest", cmap=plt.cm.Blues)
-
-    # Title + colorbar
     ax.set_title(title)
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Percentage")
-
-    # Axis labels
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Percentage") # %
     ax.set_xticks(np.arange(len(labels)))
     ax.set_yticks(np.arange(len(labels)))
     ax.set_xticklabels(labels)
@@ -52,6 +49,34 @@ def plot_confusion_matrix(y_true, y_pred, labels=None, title="Confusion Matrix")
 
     ax.set_ylabel("True label")
     ax.set_xlabel("Predicted label")
+    plt.tight_layout()
+    plt.show()
+
+##### PLOT TRAINING HISTORY #####
+
+def plot_training_history(history):
+    plt.figure(figsize=(12, 5))
+
+    # Accuracy
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Train Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Val Accuracy')
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
+
+    # Loss
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Val Loss')
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid(True)
+
     plt.tight_layout()
     plt.show()
 
