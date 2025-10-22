@@ -314,7 +314,8 @@ class SpeechEmotionRecognizer:
         features = self.extract_features_opensmile(audio, sr)
         try:
             prediction = self.model.predict(features)
-            return {"emotions": prediction.tolist()} 
+            #return {"emotions": prediction.tolist()} 
+            return prediction[0]
         except Exception as e:
             return {"error": f"Error during audio emotion analysis: {e}"}
         
@@ -334,7 +335,7 @@ class SpeechEmotionRecognizer:
         return {"emotions": predictions}
 
 class FaceEmotionRecognizer:
-    def __init__(self, backend = 'mtcnn'):
+    def __init__(self, backend = 'skip'):
         """Initialize the face emotion recognizer with a specified backend
         Args:
             backend (str): The backend to use for face detection. Default is 'mtcnn'.

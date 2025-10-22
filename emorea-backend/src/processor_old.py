@@ -97,8 +97,10 @@ class FileProcessor:
             x, y, w, h = faces[0]
             face_img = img[y:y+h, x:x+w]
             pil_image = Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
+            #pil_image = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
         else:
             pil_image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            #pil_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return {"image": pil_image}
 
     def _process_video(self, file_path):
@@ -132,6 +134,9 @@ class FileProcessor:
                     x, y, w, h = faces[0]
                     face_img = frame[y:y+h, x:x+w]
                     pil_image = Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
+                    frames.append(pil_image)
+                else:
+                    pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                     frames.append(pil_image)
 
             frame_count += 1
