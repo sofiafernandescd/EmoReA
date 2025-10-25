@@ -26,7 +26,6 @@ import json
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
-from tensorflow.keras.models import load_model
 
 
 class TextEmotionRecognizerHF:
@@ -64,110 +63,113 @@ class TextEmotionRecognizerHF:
         probs = F.softmax(logits, dim=-1).cpu().numpy().flatten()
         return {self.id2label[i]: float(p) for i, p in enumerate(probs)}
 
+
 class TextEmotionRecognizer:
     def __init__(self, 
-                 llm_model="gemma2"):
-        """
-        LLM-based text emotion recognizer using LiteLLM with Ollama backend.
-        Produces one-word labels or probabilistic scores depending on method.
-        """
+                 #llm_model="deepseek-r1:1.5b"
+                 #llm_model="qwen"
+                 #llm_model="phi4-mini"
+                 #llm_model="stablelm2:latest"
+                 #llm_model="tinyllama:latest"
+                 llm_model="openhermes:latest"
+                 #llm_model="openhermes2.5-mistral:latest"
+                 #llm_model="mistral:7b"
+                 #llm_model="dolphin-mistral:latest"
+                 #llm_model="ALIENTELLIGENCE/emotionalintelligenceanalysis:latest"
+                 ):
         self.llm_model = llm_model
-        self.api_base = "http://localhost:11434"
-        self.api_key = "ollama"
-        self.source = "text"
+        #self.executor = ThreadPoolExecutor(max_workers=2)
 
-    def analyze(self, 
-                text, 
-                one_word=True, 
-                few_shot=False, 
-                emo_list=None):
-        """
-        Analyze text for emotions using an LLM (Ollama local API).
-        Returns standardized dict with label and optional scores.
-        """
-        if emo_list is None:
-            emo_list = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
+   
+    
 
+    def analyze(self, text, one_word=True, few_shot=False, emo_list=['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']):
+        """Analyze text for emotions using a language model"""
+        
         try:
-            # --- ONE-WORD CLASSIFICATION ---
             if one_word:
-                messages = []
-
                 if few_shot:
-                    messages = [
-                        {"role": "system", "content": (
-                            "You are an emotion classification assistant. "
-                            "Always respond with ONLY ONE WORD (lowercase, no punctuation) "
-                            f"from: {emo_list}."
-                        )},
-                        {"role": "user", "content": "This is so exciting!"},
-                        {"role": "assistant", "content": "happy"},
-                        {"role": "user", "content": "I'm feeling really down about everything."},
-                        {"role": "assistant", "content": "sad"},
-                        {"role": "user", "content": "Why did you do that? I'm so upset!"},
-                        {"role": "assistant", "content": "angry"},
-                        {"role": "user", "content": text}
-                    ]
+                    response = completion(
+                        #model=f"ollama_chat/{self.llm_model}",
+                        model=f"ollama/{self.llm_model}",
+                        api_base="http://localhost:11434",
+                        api_key="ollama",  # dummy
+                        #max_tokens=1,  
+                        #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
+                        temperature=0.0,  # Set temperature to 0 for deterministic output
+                        top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
+                        messages=[
+                            {
+                            "role": "system",
+                            "content": (
+                                "You are an emotion classification assistant. "
+                                "Always respond with ONLY ONE WORD (lowercase, no punctuation) "
+                                f"from: {str(emo_list)}."
+                            )
+                            },
+                            {"role": "user", "content": "This is so exciting!"},
+                            {"role": "assistant", "content": "happy"},
+                            {"role": "user", "content": "I'm feeling really down about everything."},
+                            {"role": "assistant", "content": "sad"},
+                            {"role": "user", "content": "Why did you do that? I'm so upset!"},
+                            {"role": "assistant", "content": "angry"},
+                            {"role": "user", "content": text},
+                            #{"role": "user", "content": "I'm feeling really down about everything."},
+                            #{"role": "assistant", "content": "sad"},
+                            #{"role": "user", "content": "This is the best day of my life!"},
+                            #{"role": "assistant", "content": "happy"},
+                            #{"role": "user", "content": f"{text}\nRemember to respond with only one word from ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."}
+                        ]
+                    )
                 else:
-                    messages = [
-                        {"role": "system", "content": (
-                            f"Given the following text, identify the underlying emotion. "
-                            f"Respond with ONLY ONE WORD (lowercase, no punctuation) "
-                            f"from {emo_list}.\n\nText: {text}"
-                        )}
-                    ]
+                    response = completion(
+            
+                        model=f"ollama/{self.llm_model}",
+                        api_base="http://localhost:11434",
+                        api_key="ollama",  # dummy
+                        #max_tokens=1,  # Only allow one token response
+                        #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
+                        temperature=0.0,  # deterministic output
+                        top_p=1.0,  # Use top-p sampling to ensure only the most likely token is returned
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": f"Given the following text, identify the underlying emotion. Respond with ONLY ONE WORD (lowercase, no punctuation) from {str(emo_list)}.\n\nText: {text}"
+                                #(
+                                    #"You are an emotion classification assistant. "
+                                    #f"Given the following dialogue identify the underlying emotion: {text}"
+                                    #"You must respond with ONLY ONE WORD (lowercase, no punctuation), from: "
+                                    #"['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']."
+                                #)
+                            }]
+                    )
 
-                response = completion(
-                    model=f"ollama/{self.llm_model}",
-                    api_base=self.api_base,
-                    api_key=self.api_key,
-                    temperature=0.0,
-                    top_p=1.0,
-                    messages=messages
-                )
+                #emos = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
+                if response.choices[0].message.content.strip() not in emo_list:
+                    return 'neutral'
 
-                label = response.choices[0].message.content.strip().lower()
-                if label not in emo_list:
-                    label = "neutral"
-
-                return {
-                    "label": label,
-                    "scores": None,
-                    "source": self.source
-                }
-
-            # --- DETAILED ANALYSIS (NOT ONE WORD) ---
             else:
                 response = completion(
+                    #model=f"ollama_chat/{self.llm_model}",
                     model=f"ollama/{self.llm_model}",
-                    api_base=self.api_base,
-                    api_key=self.api_key,
-                    temperature=0.2,
-                    messages=[
-                        {"role": "user", 
-                         "content": f"Analyze the emotions expressed in the following text and provide a detailed emotional analysis: {text}"}
-                    ],
+                    messages=[{
+                        "content": f"Analyze the emotions expressed in the following text and provide a detailed emotional analysis: {text}",
+                        "role": "user"}],
                 )
-
-                return {
-                    "label": "neutral",  # placeholder for descriptive output
-                    "scores": None,
-                    "source": self.source,
-                    "description": response.choices[0].message.content.strip()
-                }
-
+            return response.choices[0].message.content.strip()
         except Exception as e:
-            return {"error": str(e), "source": self.source}
-
+            return {"error": str(e)}
+        
     def analyze_with_scores(self, text, emo_list=None):
         """
         Ask the LLM to return scores/probabilities for all emotions.
-        Returns standardized dict: {label, scores, source}.
+        Returns a dict: {emotion: score, ...}
         """
         if emo_list is None:
             emo_list = ['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']
 
         try:
+            # Prompt the LLM to output JSON or a structured format
             prompt = (
                 f"Given the following text, provide a score between 0 and 1 "
                 f"for each emotion in {emo_list}. Ensure the sum of scores is 1. "
@@ -176,42 +178,70 @@ class TextEmotionRecognizer:
 
             response = completion(
                 model=f"ollama/{self.llm_model}",
-                api_base=self.api_base,
-                api_key=self.api_key,
+                api_base="http://localhost:11434",
+                api_key="ollama",
                 temperature=0.0,
                 top_p=1.0,
-                messages=[
-                    {"role": "system", "content": "You are an emotion scoring assistant."},
-                    {"role": "user", "content": prompt}
-                ]
+                messages=[{"role": "system", "content": "You are an emotion scoring assistant."},
+                          {"role": "user", "content": prompt}]
             )
 
             raw_output = response.choices[0].message.content.strip()
 
+            # parse JSON
             try:
                 scores = json.loads(raw_output)
             except json.JSONDecodeError:
-                try:
-                    scores = eval(raw_output)  # fallback if it's dict-like text
-                except Exception:
-                    scores = {}
+                # fallback: try eval (careful!)
+                scores = eval(raw_output)
 
-            # sanitize and normalize
+            # all emotions are present
             scores = {emo: float(scores.get(emo, 0.0)) for emo in emo_list}
-            total = sum(scores.values())
-            if total > 0:
-                scores = {emo: val / total for emo, val in scores.items()}
 
-            label = max(scores, key=scores.get)
+            # normalize to sum=1
+            #total = sum(scores.values())
+            #if total > 0:
+            #    scores = {emo: val/total for emo, val in scores.items()}
 
-            return {
-                "label": label,
-                "scores": scores,
-                "source": self.source
-            }
+            return scores
 
         except Exception as e:
-            return {"error": str(e), "source": self.source}
+            return {"error": str(e)}
+        
+    def analyze_async(self, text):
+        """Asynchronous method to analyze text for emotions"""
+        """
+            Use concurrent execution:
+            - Replace synchronous completion() calls with a thread or async wrapper.
+            For Jupyter: use asyncio + nest_asyncio.
+            Or run LLM calls inside a ThreadPoolExecutor:
+            TODO: remove this when we have a proper async LLM client
+            - Use a queue to handle LLM requests and responses.
+            - Use a separate thread for LLM calls to avoid blocking the main thread.
+            - Use a timeout to avoid waiting indefinitely for LLM responses."""
+        #return self.executor.submit(self.analyze, text)
+
+        """
+        Analyze a list of texts asynchronously using threads.
+        Returns a list of predicted emotions in the same order as input.
+
+        futures = [self.executor.submit(self.analyze, text, one_word) for text in texts]
+        results = [None] * len(texts)
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                # Identify index of the future in original submission
+                idx = futures.index(future)
+                results[idx] = result
+            except Exception as e:
+                print(f"Error analyzing text: {e}")
+                idx = futures.index(future)
+                results[idx] = "neutral"  # fallback if an error occurs
+
+        return results
+        """
+        pass
 
 
 
@@ -277,36 +307,18 @@ class SpeechEmotionRecognizer:
             ])
         return np.array(feats)
 
-    def analyze_old(self, audio, sr):
+    def analyze(self, audio, sr):
         if self.model is None:
             return {"error": "Speech emotion recognizer model not loaded"}
         #features = self.extract_audio_features(audio, sr)
         features = self.extract_features_opensmile(audio, sr)
         try:
             prediction = self.model.predict(features)
-            return {"emotions": prediction.tolist()} 
+            #return {"emotions": prediction.tolist()} 
+            return prediction[0]
         except Exception as e:
             return {"error": f"Error during audio emotion analysis: {e}"}
-    
-    def analyze(self, audio, sr=16000):
-        if self.model is None:
-            return {"error": "Speech emotion recognizer model not loaded"}
         
-        features = self.extract_features_opensmile(audio, sr)
-        try:
-            pred = self.model.predict(features)[0]
-            if hasattr(self.model, "predict_proba"):
-                probs = self.model.predict_proba(features)[0]
-                classes = self.model.classes_
-                scores = {cls: float(prob) for cls, prob in zip(classes, probs)}
-            else:
-                scores = None
-
-            return {"label": pred, "scores": scores, "source": "speech"}
-        except Exception as e:
-            return {"error": f"Error during audio emotion analysis: {e}"}
-
-
     def analyze_parts(self, audio_list, sr):
         if self.model is None:
             return {"error": "Speech emotion recognizer model not loaded"}
@@ -323,46 +335,35 @@ class SpeechEmotionRecognizer:
         return {"emotions": predictions}
 
 class FaceEmotionRecognizer:
-    def __init__(self, backend='mtcnn', cnn_model_path=None):
+    def __init__(self, backend = 'skip'):
+        """Initialize the face emotion recognizer with a specified backend
+        Args:
+            backend (str): The backend to use for face detection. Default is 'mtcnn'.
+            detector_backend : string
+            Options: 'opencv', 'retinaface', 'mtcnn', 'ssd', 'dlib', 'mediapipe', 'yolov8', 'centerface' or 'skip' (default is opencv).
+        """
         self.backend = backend
-        self.cnn_model = None
-        if cnn_model_path:
-            self.load_cnn(cnn_model_path)
-
-    def load_cnn(self, model_path):
-        self.cnn_model = load_model(model_path)
 
     def analyze_image(self, image):
-        if self.cnn_model:
-            return self._analyze_with_cnn(image)
-        else:
-            return self._analyze_with_deepface(image)
-
-    def _analyze_with_deepface(self, image):
+        """Analyze a single image for facial emotions"""
         try:
-            result = DeepFace.analyze(
-                img_path=np.array(image),
+            image_array = np.array(image)
+            if len(image_array.shape) < 3:
+                # grayscale to BGR
+                image_array = cv2.cvtColor(image_array.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+            # detect emotions
+            results = DeepFace.analyze(
+                img_path=image_array,
                 actions=['emotion'],
                 detector_backend=self.backend,
-                enforce_detection=False,
+                enforce_detection=False,  # Ensure face detection is enforced
             )
-            emo_scores = result[0]["emotion"]
-            label = max(emo_scores, key=emo_scores.get)
-            return {"label": label, "scores": emo_scores, "source": "face"}
+            if results:
+                return {'emotions': results[0]['emotion'], 'dominant_emotion': results[0]['dominant_emotion']}
+            else:
+                return {'error': 'No face detected'}
         except Exception as e:
-            return {"error": str(e)}
-
-    def _analyze_with_cnn(self, image):
-        """Use a trained CNN for emotion recognition"""
-        import numpy as np
-        import cv2
-        img = cv2.resize(np.array(image), (48, 48)) / 255.0
-        img = np.expand_dims(img, axis=(0, -1))
-        preds = self.cnn_model.predict(img)[0]
-        classes = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
-        scores = {c: float(p) for c, p in zip(classes, preds)}
-        label = classes[np.argmax(preds)]
-        return {"label": label, "scores": scores, "source": "face"}
+            return {'error': str(e)}
 
     def analyze_video_frames(self, frames):
         """Analize frames extracted from video."""

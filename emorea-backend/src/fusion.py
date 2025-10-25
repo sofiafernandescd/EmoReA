@@ -10,43 +10,108 @@
 
 
 import numpy as np
+from collections import defaultdict, Counter
 
 class LateFusion:
-    def __init__(self, weights=None):
+    def __init__(self, 
+                 weights={'text': 0.4, 'audio': 0.3, 'video': 0.3}, 
+                 neutral_label="neutral"
+        ):
         """
-        weights: Dict like {'text': 0.4, 'audio': 0.3, 'video': 0.3}
+        weights: dict (e.g., {'text': 0.4, 'audio': 0.3, 'video': 0.3})
+        neutral_label: label used for neutral emotion (default='neutral')
         """
-        self.weights = weights if weights else {'text': 1/3, 'audio': 1/3, 'image': 1/3}
-        self.modalities = ['text', 'audio', 'image']
-        
-    def fuse(self, predictions: dict):
-        """
-        Find the most frequent emotion across modalities, weighted by the provided weights.
-        predictions: Dict like {'text': 'happy', 'audio': 'sad', 'image': 'neutral'}
+        self.weights = weights or {'text': 1/3, 'audio': 1/3, 'video': 1/3}
+        self.modalities = list(self.weights.keys())
+        self.neutral_label = neutral_label
 
-        Returns the final emotion label.
+    def _normalize_confidences(self, confidences):
+        """Normalize probabilities to sum to 1."""
+        total = sum(confidences.values())
+        if total == 0:
+            return {k: 1/len(confidences) for k in confidences}
+        return {k: v / total for k, v in confidences.items()}
+
+    def _aggregate_video(self, video_outputs):
         """
-        # Initialize a dictionary to hold the weighted counts
-        weighted_counts = {emotion: 0 for emotion in set(predictions.values())}
+        Aggregate multiple frame-level predictions (labels or probability dicts)
+        into a single averaged emotion distribution.
+        """
+        if not video_outputs:
+            return {self.neutral_label: 1.0}
 
-        # Iterate through each modality and its prediction
-        for modality, prediction in predictions.items():
-            if modality in self.weights:
-                weight = self.weights[modality]
-                weighted_counts[prediction] += weight
+        # if is list of dicts (probabilities)
+        if isinstance(video_outputs[0], dict):
+            agg = defaultdict(float)
+            for frame_pred in video_outputs:
+                normed = self._normalize_confidences(frame_pred)
+                for emotion, prob in normed.items():
+                    agg[emotion] += prob
+            return self._normalize_confidences({k: v / len(video_outputs) for k, v in agg.items()})
 
-        # Find the emotion with the highest weighted count
-        final_emotion = max(weighted_counts, key=weighted_counts.get)
+        # if is list of labels
+        else:
+            counts = Counter(video_outputs)
+            return self._normalize_confidences({k: v / len(video_outputs) for k, v in counts.items()})
+
+
+    def fuse(self, predictions, top_k=3):
+        """
+        Fuse predictions from multiple modalities.
         
-        return final_emotion
-    
-    def neutral_decision_fusion(self, results):
-        """Simple rule-based fusion: override neutral with non-neutral"""
-        if "text" in results and results["text"] != "neutral":
-            return results["text"]
-        if "speech" in results and results["speech"] != "neutral":
-            return results["speech"]
-        if "face" in results and results["face"].get("dominant_emotion") != "neutral":
-            return results["face"]["dominant_emotion"]
-        return "neutral"
-        
+        predictions: dict
+            {
+              'text': {'happy': 0.8, 'sad': 0.1, 'neutral': 0.1},
+              'audio': 'sad',
+              'video': [ {'happy':0.4,'neutral':0.6}, {'happy':0.3,'neutral':0.7} ]
+            }
+
+        Returns:
+            final_label (str)
+            fused_probs (dict)
+            top_k_list (list of tuples)
+        """
+        combined = defaultdict(float)
+
+        for modality, output in predictions.items():
+            weight = self.weights.get(modality, 0)
+
+            # modality output type
+            if isinstance(output, list):  # frame-wise
+                confs = self._aggregate_video(output)
+            elif isinstance(output, dict):  # probability distribution
+                confs = self._normalize_confidences(output)
+            elif isinstance(output, str):  # single label
+                confs = {output: 1.0}
+            else:
+                raise ValueError(f"Unsupported output type for modality {modality}: {type(output)}")
+
+            # weighted accumulation
+            for emotion, prob in confs.items():
+                combined[emotion] += weight * prob
+
+        # normalize final fused probabilities
+        fused_probs = self._normalize_confidences(combined)
+        final_label = max(fused_probs, key=fused_probs.get)
+
+        # compute top-k
+        sorted_emotions = sorted(fused_probs.items(), key=lambda x: x[1], reverse=True)
+        top_k_list = sorted_emotions[:top_k]
+
+        return final_label, fused_probs, top_k_list
+
+    # optional neutral rule
+    def rule_based_neutral_override(self, predictions, fused_label):
+        """
+        Optional rule: if all modalities predict 'neutral', return neutral;
+        otherwise keep the fused label.
+        """
+        non_neutrals = [
+            p for p in predictions.values()
+            if (isinstance(p, str) and p != self.neutral_label)
+            or (isinstance(p, dict) and max(p, key=p.get) != self.neutral_label)
+        ]
+
+        if not non_neutrals:
+            return self.neutral_label
+        return fused_label
