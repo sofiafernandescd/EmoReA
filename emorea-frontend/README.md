@@ -47,7 +47,7 @@ yarn build
 This command creates an optimized production build of the application in the build directory. You can then deploy the contents of this directory to a static hosting service like Firebase Hosting, Netlify, Vercel, or serve it using a web server like Nginx.
 
 ## Contributing
-[Link to your contributing guidelines, if any]
+Future work.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
