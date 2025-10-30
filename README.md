@@ -1,6 +1,14 @@
 # EmoReA: Emotion Recognition Assistant
 
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-18.0%2B-61DAFB?logo=react&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.68%2B-009688?logo=fastapi&logoColor=white)
+
+> **Code developed for the Master's Thesis:**  
+> **_Emotion Recognition in Multimedia Content_**  
+> Master’s in Computer Science and Multimedia at Lisbon School of Engineering (ISEL), 2025  
+
 
 EmoReA is an Emotion Recognition Assistant designed for multimodal emotion analysis. It integrates a user-friendly web interface (React frontend) with a Python backend API to process and understand emotions from various data types like text, audio, image, and video.
 
