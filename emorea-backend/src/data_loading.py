@@ -152,7 +152,7 @@ def load_emodb():
     print("Path to dataset files:", path)
 
     # List all files in the dataset
-    files = [file_path.name for file_path in os.scandir(path+"/wav") if file_path.is_file()]
+    #files = [file_path.name for file_path in os.scandir(path+"/wav") if file_path.is_file()]
 
     # Define the dataset directory
     emodb_path = path + "/wav/*.wav"
@@ -192,13 +192,11 @@ def load_tess():
     # Download dataset from Kaggle
     path = kagglehub.dataset_download("ejlok1/toronto-emotional-speech-set-tess")
     print("Path to dataset files:", path)
-    # List all files in the dataset
-    print(os.listdir(path))
+    
     # change name of existing folder on path
     os.rename(os.path.join(path, os.listdir(path)[0]), os.path.join(path, "TESS"))
 
     tess_path = os.path.join(path, "TESS")
-    print(os.listdir(tess_path))
 
     all_files = [
         os.path.join(tess_path, folder, filename)
@@ -235,7 +233,7 @@ def load_crema_d():
     # List all files in the dataset
     path = path + '/AudioWAV'
     crema_directory_list = os.listdir(path)
-    print(crema_directory_list)
+    #print(crema_directory_list)
 
     file_emotion = []
     file_path = []
@@ -280,8 +278,6 @@ def load_ravdess():
     # Download dataset from Kaggle
     path = kagglehub.dataset_download("uwrfkaggler/ravdess-emotional-speech-audio")
     print("Path to dataset files:", path)
-    # List all files in the dataset
-    print(os.listdir(path))
 
     # Define the dataset directory
     ravdess_path = path + "/audio_speech_actors_01-24/**/*.wav"
@@ -321,7 +317,6 @@ def load_savee():
     # Download dataset from Kaggle
     path = kagglehub.dataset_download("ejlok1/surrey-audiovisual-expressed-emotion-savee")
     data_path = os.path.join(path, "ALL")
-    print([x for x in os.listdir(data_path)])
 
     # Emotion mapping based on filename prefix
     # Example filenames: DC_a01.wav, DC_h10.wav, etc.
@@ -429,9 +424,6 @@ def load_fer2013():
     print("Subfolders in the dataset:", os.listdir(file_path))
     # read dataset
     df_fer = pd.read_csv(os.path.join(file_path, "fer2013.csv"))
-    print("First few rows of the dataframe:")
-    print(df_fer.head())
-
     label_to_text = {
         0:'angry', 
         1:'disgust', 
@@ -452,8 +444,8 @@ def load_rafbd(folder="test"):
     file_path = kagglehub.dataset_download("shuvoalok/raf-db-dataset")
     imgs_path = os.path.join(file_path, "DATASET", folder)
     # Check subfolders
-    print("Subfolders:", os.listdir(file_path))
-    print("Subfolders in the dataset:", os.listdir(imgs_path))
+    #print("Subfolders:", os.listdir(file_path))
+    #print("Subfolders in the dataset:", os.listdir(imgs_path))
     # read test labels
     df_raf = pd.read_csv(os.path.join(file_path, f"{folder}_labels.csv"))
     emotion_map = {
@@ -629,9 +621,9 @@ def load_cmu_mosi():
     """
     # Download dataset from Kaggle
     path = kagglehub.dataset_download("samarwarsi/cmu-mosei")
-    print("Path to dataset files:", path)
+    #print("Path to dataset files:", path)
     # List all files in the dataset
-    print(os.listdir(path))
+    #print(os.listdir(path))
 
     covarep = load_csd_file("cmu-mosei/CMU_MOSEI_COVAREP.csd")
     facet = load_csd_file("cmu-mosei/CMU_MOSEI_VisualFacet_2.3.csd")
