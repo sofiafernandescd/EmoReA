@@ -36,7 +36,6 @@ class FileProcessor:
                 return self._process_image(file_path)
             elif file_type == 'video':
                 return self._process_video(file_path)
-                #return self._process_audio(file_path)
             else:
                 return {"error": "Unsupported file type"}
         except Exception as e:
@@ -128,8 +127,9 @@ class FileProcessor:
                 break
 
             if frame_count % frame_interval == 0:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+                # Face detection is now performed on FacialEmotionRecognizer
+                #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                #faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
                 #if len(faces) > 0:
                 #    x, y, w, h = faces[0]
                 #    face_img = frame[y:y+h, x:x+w]
@@ -149,7 +149,7 @@ class FileProcessor:
         """Asynchronous method to transcribe audio using Whisper"""
         """
             Whisper transcription is done inline with transcribe(audio), which is blocking.
-            Suggestion:
+            Suggestion (Future Work):
             Transcribe first to segments (timestamps), then process audio in chunks later or in parallel.
             Use a thread or async wrapper to handle transcription without blocking the main thread.
         """

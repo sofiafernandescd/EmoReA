@@ -67,11 +67,11 @@ class TextEmotionRecognizerHF:
 class TextEmotionRecognizer:
     def __init__(self, 
                  #llm_model="deepseek-r1:1.5b"
-                 #llm_model="qwen"
+                 llm_model="qwen"
                  #llm_model="phi4-mini"
                  #llm_model="stablelm2:latest"
                  #llm_model="tinyllama:latest"
-                 llm_model="openhermes:latest"
+                 #llm_model="openhermes:latest"
                  #llm_model="openhermes2.5-mistral:latest"
                  #llm_model="mistral:7b"
                  #llm_model="dolphin-mistral:latest"
