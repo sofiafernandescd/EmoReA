@@ -582,8 +582,7 @@ def load_meld(split='test'):
     """
     # Download dataset
     file_path = kagglehub.dataset_download("bhandariprakanda/meld-emotion-recognition")
-    # Check subfolders
-    print("Subfolders in the dataset:", os.listdir(file_path))
+    
     if split=='test':
         raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test", "output_repeated_splits_test")
         labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "test_sent_emo.csv")
@@ -594,12 +593,8 @@ def load_meld(split='test'):
         raw_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "dev", "dev_splits_complete")
         labels_path = os.path.join(file_path, "MELD.Raw", "MELD.Raw", "dev_sent_emo.csv")
     files = os.listdir(raw_path)
-    # scan the directory 
-    print("Subfolders in the raw data:", files)
-    # create dataframe with the files
-    filenames = [os.path.join(raw_path, file) for file in files]
-    # Load the labels CSV file
     
+    # create dataframe with the files
     labels_df = pd.read_csv(labels_path)
     labels_df['filename'] = labels_df[['Dialogue_ID', 'Utterance_ID']].apply(
         lambda x: os.path.join(raw_path, f"dia{x['Dialogue_ID']}_utt{x['Utterance_ID']}.mp4"), axis=1
