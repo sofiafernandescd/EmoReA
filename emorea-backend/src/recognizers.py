@@ -240,7 +240,7 @@ class TextEmotionRecognizer:
 
 
 class SpeechEmotionRecognizer:
-    def __init__(self, model_name='svm_C.joblib'):
+    def __init__(self, model_name='svm_E.joblib'):
 
         # get the path to the project root (one level above 'src')
         root_dir = Path(__file__).resolve().parent.parent

@@ -10,14 +10,20 @@ const formatassistanttext = (text) => {
 };
 
 // function to clean raw text response from the assistant
-const cleanresponsetext = (text) => {
-  if (typeof text !== 'string') {
-    return "";
-  }
-  // removes starting/ending quotes that might come from raw json string
-  let cleaned = text.trim().replace(/^"|"$/g, ''); 
-  // replaces literal newline representation (\n) with a real newline character
-  cleaned = cleaned.replace(/\\n/g, '\n');
+const cleanResponseText = (text) => {
+  if (typeof text !== 'string') return "";
+
+  let cleaned = text.trim()
+    // remove starting/ending quotes
+    .replace(/^"|"$/g, '')
+    // replace literal \n with real newlines
+    .replace(/\\n/g, '\n')
+    // replace double backslashes \\ with a single \
+    .replace(/\\\\/g, '\\')
+    // optional: remove stray escape sequences like \" or \'
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'");
+
   return cleaned.trim();
 };
 
@@ -33,7 +39,7 @@ const ChatAssistant = ({ enabled }) => {
     }
 
     const rawreply = await chatWithAssistant(userInput);
-    const cleanedreply = cleanresponsetext(rawreply); 
+    const cleanedreply = cleanResponseText(rawreply); 
 
     setMessages([
       ...messages,
@@ -55,7 +61,7 @@ const ChatAssistant = ({ enabled }) => {
             key={i} 
             className={`chat-message ${m.sender}`} // classes 'chat-message user' or 'chat-message assistant'
           >
-            <strong style={{ fontWeight: 'bold' }}>{m.sender === 'user' ? 'You' : 'Assistant'}:</strong> 
+            <strong style={{ fontWeight: 'bold' }}>{m.sender === 'user' ? 'You' : 'Assistant'}: </strong> 
             
             {/* conditional rendering for bold markdown */}
             {m.sender === "assistant" ? (

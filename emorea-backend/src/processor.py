@@ -101,8 +101,62 @@ class FileProcessor:
             pil_image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
             #pil_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return {"image": pil_image}
+    
 
     def _process_video(self, file_path):
+        """Process video files: load audio with librosa and extract 2 frames per segment."""
+        result = {}
+
+        # Load audio
+        try:
+            result.update(self._process_audio(file_path))
+        except Exception as e:
+            print(f"[Warning] Could not load audio from video: {e}")
+            result["audio"] = None
+            result["text"] = None
+            result["segments"] = []
+
+        # Extract frames (2 per segment) 
+        cap = cv2.VideoCapture(file_path)
+        if not cap.isOpened():
+            raise IOError("Could not open video file with OpenCV.")
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30  # fallback
+
+        video_chunks = []
+        for seg in result.get("segments", []):
+            start, end = seg["start"], seg["end"]
+            duration = end - start
+            timestamps = [start + duration * 0.25, start + duration * 0.75]
+            frames = []
+
+            for t in timestamps:
+                cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+                ret, frame = cap.read()
+                if ret:
+                    #rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    #frames.append(Image.fromarray(rgb))
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+                    for (x, y, w, h) in faces:
+                        face_img = frame[y:y+h, x:x+w]
+                        frames.append(
+                            Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
+                        )
+
+            video_chunks.append(frames)
+
+        cap.release()
+        result["video_chunks"] = video_chunks
+        result["frames"] = [f for chunk in video_chunks for f in chunk]
+
+        print(result)
+
+        return result
+
+    def _process_video_old(self, file_path):
         """Process video files with frame extraction and audio processing"""
         result = {}
         with tempfile.NamedTemporaryFile(suffix='.wav') as tmpfile:
