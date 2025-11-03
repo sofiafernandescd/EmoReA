@@ -1,10 +1,13 @@
 import React from "react";
 import EmotionRecognition from "./components/EmotionRecognition/EmotionRecognition";
+import "./App.css";
+
 
 function App() {
   return (
-    <div>
-      <h1>Multimodal Emotion Recognition</h1>
+    <div className="app-container">
+  
+
       <EmotionRecognition />
     </div>
   );

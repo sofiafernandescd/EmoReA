@@ -2,26 +2,29 @@ import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import RecordRTC from "recordrtc";
 import { analyzeFile } from "../../services/api";
-import '../../App.css'; // CSS
+import "../../App.css";
 
-const WebcamCapture = ({ onAnalysisComplete }) => {
+const WebcamCapture = ({ onAnalysisComplete, onPreview }) => {
   const webcamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const [recording, setRecording] = useState(false);
-  const [preview, setPreview] = useState(null);
 
   const capturePhoto = async () => {
     const imageSrc = webcamRef.current.getScreenshot();
     const blob = await (await fetch(imageSrc)).blob();
+    const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
 
-    const result = await analyzeFile(new File([blob], "photo.jpg"));
+    const result = await analyzeFile(file);
     onAnalysisComplete(result);
-    setPreview(imageSrc);
+    onPreview({ src: imageSrc, type: "image" });
   };
 
   const startRecording = () => {
     const stream = webcamRef.current.stream;
-    mediaRecorderRef.current = new RecordRTC(stream, { type: "video", mimeType: 'video/mp4'});
+    mediaRecorderRef.current = new RecordRTC(stream, {
+      type: "video",
+      mimeType: "video/mp4",
+    });
     mediaRecorderRef.current.startRecording();
     setRecording(true);
   };
@@ -30,42 +33,44 @@ const WebcamCapture = ({ onAnalysisComplete }) => {
     setRecording(false);
     mediaRecorderRef.current.stopRecording(async () => {
       const blob = mediaRecorderRef.current.getBlob();
-      const result = await analyzeFile(new File([blob], "video.mp4"));
+      const file = new File([blob], "video.mp4", { type: "video/mp4" });
+
+      const result = await analyzeFile(file);
       onAnalysisComplete(result);
-      setPreview(URL.createObjectURL(blob));
+
+      const url = URL.createObjectURL(blob);
+      onPreview({ src: url, type: "video" });
     });
   };
 
-  
   return (
-    <div className="webcam-capture-container"> {/* new container class for layout */}
-      <Webcam ref={webcamRef} audio={true} muted={true} screenshotFormat="image/jpeg" className="webcam-stream" />
+    <div className="webcam-capture-container">
+      <Webcam
+        ref={webcamRef}
+        audio={true}
+        muted={true}
+        screenshotFormat="image/jpeg"
+        className="webcam-stream"
+      />
+
       <div className="webcam-controls">
-        <button 
-            onClick={capturePhoto} 
-            className="action-button record-button" // class for photo
+        <button
+          onClick={capturePhoto}
+          className="action-button record-button"
+          disabled={recording}
         >
-            Take Photo
+          Take Photo
         </button>
-        <button 
-            onClick={recording ? stopRecording : startRecording}
-            className={`action-button record-button ${recording ? 'recording-active' : ''}`} // class for record/stop
+
+        <button
+          onClick={recording ? stopRecording : startRecording}
+          className={`action-button record-button ${
+            recording ? "recording-active" : ""
+          }`}
         >
-            {recording ? "Stop" : "Record"}
+          {recording ? "Stop" : "Record"}
         </button>
       </div>
-      {preview && (
-        <div className="preview-section">
-          <h4 className="preview-title">Preview:</h4>
-          {/* using video or img based on recording state */}
-          {preview && (
-            <div className="preview-section">
-              <h4 className="preview-title">Preview:</h4>
-              <video controls src={preview} className="preview-media" />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

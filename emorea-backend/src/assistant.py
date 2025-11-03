@@ -31,19 +31,74 @@ class EmotionRecognitionAssistant:
 
         analysis_results = {}
 
-        if "text" in processed_data and processed_data["text"]:
-            analysis_results["text_emotion"] = {"transcription": processed_data["text"], "emotion": self.text_recognizer.analyze(processed_data["text"])}
+        #if "text" in processed_data and processed_data["text"]:
+        #    analysis_results["text_emotion"] = {"transcription": processed_data["text"], "emotion": self.text_recognizer.analyze(processed_data["text"])}
 
-        if "audio" in processed_data and processed_data["audio"] and processed_data["audio"]["raw"] is not None:
-            analysis_results["audio_emotion"] = self.speech_recognizer.analyze(
-                processed_data["audio"]["raw"], processed_data["audio"]["sample_rate"])
+        #if "audio" in processed_data and processed_data["audio"] and processed_data["audio"]["raw"] is not None:
+        #    analysis_results["audio_emotion"] = self.speech_recognizer.analyze(
+        #        processed_data["audio"]["raw"], processed_data["audio"]["sample_rate"])
             
             #analysis_results["audio_emotion"] = self.speech_recognizer.analyze_parts(
             #    processed_data["audio"]["audio_chunks"], processed_data["audio"]["sample_rate"])
 
+        # TEXT
+        if "text" in processed_data and processed_data["text"]:
+            segments = processed_data.get("segments", [])
+            if segments:
+                text_results = []
+                for seg in segments:
+                    seg_text = seg.get("text", "").strip()
+                    if seg_text:
+                        emotion = self.text_recognizer.analyze(seg_text)
+                        text_results.append({
+                            "start": seg.get("start"),
+                            "end": seg.get("end"),
+                            "text": seg_text,
+                            "emotion": emotion
+                        })
+                analysis_results["text_emotion"] = text_results
+            else:
+                # single full-text analysis
+                emotion = self.text_recognizer.analyze(processed_data["text"])
+                analysis_results["text_emotion"] = [{
+                    "start": 0,
+                    "end": None,
+                    "text": processed_data["text"],
+                    "emotion": emotion
+                }]
+
+        # AUDIO
+        if "audio" in processed_data and processed_data["audio"]:
+            sr = processed_data["audio"]["sample_rate"]
+            audio_chunks = processed_data["audio"].get("audio_chunks", [])
+            if audio_chunks:
+                audio_results = []
+                for idx, chunk in enumerate(audio_chunks):
+                    try:
+                        emotion = self.speech_recognizer.analyze(chunk, sr)
+                    except Exception as e:
+                        emotion = {"error": str(e)}
+                    segment = processed_data.get("segments", [{}])[idx] if idx < len(processed_data.get("segments", [])) else {}
+                    audio_results.append({
+                        "start": segment.get("start"),
+                        "end": segment.get("end"),
+                        "emotion": emotion
+                    })
+                analysis_results["audio_emotion"] = audio_results
+            else:
+                # single full audio analysis
+                emotion = self.speech_recognizer.analyze(processed_data["audio"]["raw"], sr)
+                analysis_results["audio_emotion"] = [{
+                    "start": 0,
+                    "end": None,
+                    "emotion": emotion
+                }]
+
+        # SINGLE IMAGE
         if "image" in processed_data and isinstance(processed_data["image"], Image.Image):
             analysis_results["face_emotion"] = self.face_recognizer.analyze_image(processed_data["image"])
 
+        # VIDEO FRAMES
         if "frames" in processed_data and processed_data["frames"]:
             analysis_results["face_emotion"] = self.face_recognizer.analyze_video_frames(processed_data["frames"])
 

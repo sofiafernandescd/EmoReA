@@ -234,3 +234,205 @@ code {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* General container */
+.analysis-container {
+  margin-top: 1rem;
+  text-align: left;
+  color: #333;
+  font-family: "Inter", sans-serif;
+}
+
+/* Titles */
+.analysis-title {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+  margin-bottom: 1rem;
+}
+
+.analysis-section {
+  margin-bottom: 1.5rem;
+}
+
+.analysis-section h3 {
+  margin-bottom: 0.6rem;
+}
+
+/* Segment cards */
+.segment-card {
+  background: #f7f7f7;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.segment-header {
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.segment-text {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #333;
+  text-align: left;
+}
+
+/* Emotion badge */
+.emotion-badge {
+  color: white;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
+/* Emotion score bars */
+.emotion-scores {
+  margin-top: 6px;
+}
+
+.emotion-score-item {
+  margin-bottom: 4px;
+}
+
+.emotion-score-label {
+  font-size: 0.85rem;
+  display: block;
+}
+
+.emotion-score-bar-bg {
+  height: 6px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.emotion-score-bar {
+  height: 100%;
+}
+
+/* Facial emotion cards */
+.face-card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.2s ease;
+  text-align: left;
+}
+
+.face-card.open {
+  background: #fdfdfd;
+}
+
+.face-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.face-card-header h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.face-card-toggle {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.icon-title {
+  vertical-align: middle;
+  margin-right: 8px;
+  color: #4a5568;
+  stroke-width: 1.8;
+}
+
+.icon-section {
+  vertical-align: middle;
+  margin-right: 6px;
+  color: #444;
+  stroke-width: 1.8;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #333;
+}
+
+
+
+
+/* Layout fix */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: radial-gradient(circle at top, #0f172a, #000);
+  color: #fff;
+  overflow-y: auto;
+}
+
+/* Header styling */
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 1.5rem; /* slightly reduced vertical space */
+  z-index: 2;
+}
+
+.app-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #00e0ff, #ff6ec7, #00e0ff);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+  margin-bottom: 0.2rem; /* tighten spacing with subtitle */
+}
+
+.app-subtitle {
+  font-family: "Inter", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #555; /* darker for contrast */
+  opacity: 0.95;
+  margin-top: 0; /* remove default gap */
+  animation: fadeIn 2s ease-in;
+}
