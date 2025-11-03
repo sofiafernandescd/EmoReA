@@ -11,17 +11,18 @@ import os
 os.environ["LITELLM_API_BASE"] = "http://localhost:11434"
 os.environ["LITELLM_API_KEY"] = "ollama"
 #import tensorflow as tf
-import pickle
+#import pickle
 from joblib import load
 import numpy as np
 from deepface import DeepFace
 from litellm import completion 
 import opensmile
-#from concurrent.futures import ThreadPoolExecutor, as_completed
-#import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 import librosa
 import cv2
 import json
+from pathlib import Path
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
@@ -80,8 +81,6 @@ class TextEmotionRecognizer:
         self.llm_model = llm_model
         #self.executor = ThreadPoolExecutor(max_workers=2)
 
-   
-    
 
     def analyze(self, text, one_word=True, few_shot=False, emo_list=['neutral', 'happy', 'sad', 'angry', 'fear', 'disgust', 'surprise']):
         """Analyze text for emotions using a language model"""
@@ -208,7 +207,7 @@ class TextEmotionRecognizer:
         except Exception as e:
             return {"error": str(e)}
         
-    def analyze_async(self, text):
+    def analyze_async(self, texts, one_word=True):
         """Asynchronous method to analyze text for emotions"""
         """
             Use concurrent execution:
@@ -219,11 +218,8 @@ class TextEmotionRecognizer:
             - Use a queue to handle LLM requests and responses.
             - Use a separate thread for LLM calls to avoid blocking the main thread.
             - Use a timeout to avoid waiting indefinitely for LLM responses."""
+        
         #return self.executor.submit(self.analyze, text)
-
-        """
-        Analyze a list of texts asynchronously using threads.
-        Returns a list of predicted emotions in the same order as input.
 
         futures = [self.executor.submit(self.analyze, text, one_word) for text in texts]
         results = [None] * len(texts)
@@ -231,7 +227,7 @@ class TextEmotionRecognizer:
         for future in as_completed(futures):
             try:
                 result = future.result()
-                # Identify index of the future in original submission
+                # index of the future in original submission
                 idx = futures.index(future)
                 results[idx] = result
             except Exception as e:
@@ -240,13 +236,16 @@ class TextEmotionRecognizer:
                 results[idx] = "neutral"  # fallback if an error occurs
 
         return results
-        """
-        pass
 
 
 
 class SpeechEmotionRecognizer:
-    def __init__(self, model_path='/Users/sofiafernandes/Documents/Repos/EmoReA/emorea-backend/notebooks/speech/ser_svm_model.joblib'):
+    def __init__(self, model_name='svm_C.joblib'):
+
+        # get the path to the project root (one level above 'src')
+        root_dir = Path(__file__).resolve().parent.parent
+        model_path = root_dir / "models" / model_name
+
         try:
             with open(model_path, 'rb') as file:
                 #self.model = pickle.load(file)

@@ -21,7 +21,7 @@ const WebcamCapture = ({ onAnalysisComplete }) => {
 
   const startRecording = () => {
     const stream = webcamRef.current.stream;
-    mediaRecorderRef.current = new RecordRTC(stream, { type: "video", mimeType: 'video/mp4' });
+    mediaRecorderRef.current = new RecordRTC(stream, { type: "video", mimeType: 'video/mp4'});
     mediaRecorderRef.current.startRecording();
     setRecording(true);
   };
@@ -30,15 +30,16 @@ const WebcamCapture = ({ onAnalysisComplete }) => {
     setRecording(false);
     mediaRecorderRef.current.stopRecording(async () => {
       const blob = mediaRecorderRef.current.getBlob();
-      const result = await analyzeFile(new File([blob], "video.webm"));
+      const result = await analyzeFile(new File([blob], "video.mp4"));
       onAnalysisComplete(result);
       setPreview(URL.createObjectURL(blob));
     });
   };
 
+  
   return (
     <div className="webcam-capture-container"> {/* new container class for layout */}
-      <Webcam ref={webcamRef} audio={false} screenshotFormat="image/jpeg" className="webcam-stream" />
+      <Webcam ref={webcamRef} audio={true} muted={true} screenshotFormat="image/jpeg" className="webcam-stream" />
       <div className="webcam-controls">
         <button 
             onClick={capturePhoto} 

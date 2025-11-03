@@ -19,7 +19,8 @@ source venv/bin/activate
 # Activate the virtual environment
 #source venv/bin/activate
 # Install FFMPEG
-brew install ffmpeg
+# brew install ffmpeg
+# sudo port install ffmpeg +nonfree # using MacPorts
 # Install Sox (just in notebooks)
 #brew install sox
 # Install the required packages using requirements.txt

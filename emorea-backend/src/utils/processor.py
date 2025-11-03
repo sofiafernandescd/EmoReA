@@ -17,7 +17,7 @@ class FileProcessor:
             'image': ['jpg', 'jpeg', 'png'],
             'video': ['mp4', 'avi', 'mov', 'webm']
         }
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')      
+        #self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')      
         self.transcriber = whisper.load_model("base") 
 
     def process_file(self, file_path):
@@ -85,9 +85,15 @@ class FileProcessor:
                 "sample_rate": sr,
             }
         }
-
-
+    
     def _process_image(self, file_path):
+        """Process image files with face detection"""
+        img = cv2.imread(file_path)
+        pil_image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        return {"image": pil_image}
+
+
+    def _process_image_crop(self, file_path):
         """Process image files with face detection"""
         img = cv2.imread(file_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -101,19 +107,65 @@ class FileProcessor:
             pil_image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
             #pil_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return {"image": pil_image}
+    
+    
+    
+    def _process_video_new(self, file_path):
+        """Process video files with frame extraction aligned with audio segments."""
+        result = {}
+        
+        # 1. Process audio to get timestamps
+        audio_result = self._process_audio(file_path)
+        result.update(audio_result)
+        print(result)
+
+        
+        # 2. Process aligned frames
+        cap = cv2.VideoCapture(file_path)
+        if not cap.isOpened():
+            raise IOError("Could not open video file with OpenCV.") 
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30 # Fallback for corrupted/bad metadata
+        
+        # Initialize video chunks structure (list of list of frames)
+        video_chunks = [[] for _ in result["segments"]]
+        frame_number = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            # Calculate the current time
+            current_time_sec = frame_number / fps
+            for i, segment in enumerate(result["segments"]):
+                start_time = segment['start']
+                end_time = segment['end']
+                if start_time <= current_time_sec < end_time:
+                    # Convert to PIL Image for downstream processing
+                    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    pil_image = Image.fromarray(rgb_frame)
+                    video_chunks[i].append(pil_image)
+                    break 
+            frame_number += 1
+        cap.release()
+        
+        result["video_chunks"] = video_chunks
+        result["frames"] = [frame for chunk in video_chunks for frame in chunk] 
+        
+        return result
 
     def _process_video(self, file_path):
         """Process video files with frame extraction and audio processing"""
         result = {}
         with tempfile.NamedTemporaryFile(suffix='.wav') as tmpfile:
             video = VideoFileClip(file_path)
-            print("Video:", video)
-            print("Video.audio: ", video.audio)
             if video.audio:
                 video.audio.write_audiofile(tmpfile.name)
                 audio_result = self._process_audio(tmpfile.name)
                 result.update(audio_result)
+                print(result)
             else:
+                print("Audion NULL")
                 result["audio"] = None
                 result["text"] = None
 
@@ -145,6 +197,7 @@ class FileProcessor:
 
         cap.release()
         result["frames"] = frames
+        print(result)
         return result
     
     def transcribe_async(self, audio):
@@ -158,3 +211,4 @@ class FileProcessor:
         #thread = threading.Thread(target=self.transcriber.transcribe, args=(audio,))
         #thread.start()
         pass
+
