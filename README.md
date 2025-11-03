@@ -31,6 +31,16 @@ Instructions for running the frontend and backend development servers are provid
 -   [Running the Frontend](emorea-frontend/README.md#running-the-frontend)
 -   [Running the Backend](emorea-backend/README.md#running-the-backend)
 
+
+### Main Interface
+![Main Interface](images/app-front.png)
+
+### Emotion Analysis Result
+![Analysis Result](images/video-emotions.png)
+
+### Chat About Results
+![Analysis Result](images/chat.png)
+
 ## Deployment
 
 ### Local Deployment

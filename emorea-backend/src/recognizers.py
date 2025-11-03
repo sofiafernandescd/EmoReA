@@ -240,7 +240,7 @@ class TextEmotionRecognizer:
 
 
 class SpeechEmotionRecognizer:
-    def __init__(self, model_name='svm_E.joblib'):
+    def __init__(self, model_name='svm_ERT.joblib'):
 
         # get the path to the project root (one level above 'src')
         root_dir = Path(__file__).resolve().parent.parent
@@ -334,12 +334,12 @@ class SpeechEmotionRecognizer:
         return {"emotions": predictions}
 
 class FaceEmotionRecognizer:
-    def __init__(self, backend = 'skip'):
+    def __init__(self, backend = 'dlib'):
         """Initialize the face emotion recognizer with a specified backend
         Args:
             backend (str): The backend to use for face detection. Default is 'mtcnn'.
             detector_backend : string
-            Options: 'opencv', 'retinaface', 'mtcnn', 'ssd', 'dlib', 'mediapipe', 'yolov8', 'centerface' or 'skip' (default is opencv).
+            Options: 'opencv', 'retinaface', 'mtcnn', 'ssd', 'dlib', 'mediapipe', 'yolov8', 'centerface' or 'skip'.
         """
         self.backend = backend
 

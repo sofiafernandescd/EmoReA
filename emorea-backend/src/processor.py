@@ -138,15 +138,15 @@ class FileProcessor:
                 cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
                 ret, frame = cap.read()
                 if ret:
-                    #rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    #frames.append(Image.fromarray(rgb))
-                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                    faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
-                    for (x, y, w, h) in faces:
-                        face_img = frame[y:y+h, x:x+w]
-                        frames.append(
-                            Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
-                        )
+                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frames.append(Image.fromarray(rgb))
+                    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    #faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+                    #for (x, y, w, h) in faces:
+                    #    face_img = frame[y:y+h, x:x+w]
+                    #    frames.append(
+                    #        Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
+                    #    )
 
             video_chunks.append(frames)
 
