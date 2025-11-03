@@ -36,9 +36,9 @@ const EmotionRecognition = () => {
   return (
     <div className="emotion-recognition-container">
       <div className="app-header">
-              <h1 className="app-title">EmoReA</h1>
-              <h2 className="app-subtitle">Emotion Recognition Assistant</h2>
-            </div>
+          <h1 className="app-title">EmoReA</h1>
+          <h2 className="app-subtitle">Emotion Recognition Assistant</h2>
+      </div>
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <button
           onClick={() => setActiveTab("webcam")}

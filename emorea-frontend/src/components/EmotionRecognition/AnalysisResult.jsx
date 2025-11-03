@@ -82,7 +82,8 @@ const AnalysisResult = ({ result }) => {
       <div key={idx} className="segment-card">
         <div className="segment-header">
           <b>
-            {segment.start}s – {segment.end ?? "end"}s
+            {segment.start?.toFixed(1) ?? 0}s –{" "}
+            {segment.end ? `${segment.end.toFixed(1)}s` : "end"}
           </b>
           {dominantEmotion && <EmotionBadge emotion={dominantEmotion} />}
         </div>
