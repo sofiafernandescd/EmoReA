@@ -61,7 +61,7 @@ const ChatAssistant = ({ enabled }) => {
             key={i} 
             className={`chat-message ${m.sender}`} // classes 'chat-message user' or 'chat-message assistant'
           >
-            <strong style={{ fontWeight: 'bold' }}>{m.sender === 'user' ? 'You' : 'Assistant'}: </strong> 
+            <strong style={{ fontWeight: 'bold' }}>{m.sender === 'user' ? 'You: ' : 'Assistant: '}</strong> 
             
             {/* conditional rendering for bold markdown */}
             {m.sender === "assistant" ? (

@@ -54,6 +54,8 @@ class FileProcessor:
         ext = file_path.split('.')[-1].lower()
         text = ''
 
+        print(ext, "FILE")
+
         if ext == 'txt':
             with open(file_path, 'r') as f:
                 text = f.read()

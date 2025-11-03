@@ -45,23 +45,24 @@ const WebcamCapture = ({ onAnalysisComplete }) => {
             onClick={capturePhoto} 
             className="action-button record-button" // class for photo
         >
-            Take photo
+            Take Photo
         </button>
         <button 
             onClick={recording ? stopRecording : startRecording}
             className={`action-button record-button ${recording ? 'recording-active' : ''}`} // class for record/stop
         >
-            {recording ? "stop" : "record"}
+            {recording ? "Stop" : "Record"}
         </button>
       </div>
       {preview && (
         <div className="preview-section">
-          <h4 className="preview-title">preview:</h4>
+          <h4 className="preview-title">Preview:</h4>
           {/* using video or img based on recording state */}
-          {preview.endsWith('.mp4') ? ( 
-            <video controls src={preview} className="preview-media" />
-          ) : (
-            <img src={preview} alt="preview" className="preview-media" />
+          {preview && (
+            <div className="preview-section">
+              <h4 className="preview-title">Preview:</h4>
+              <video controls src={preview} className="preview-media" />
+            </div>
           )}
         </div>
       )}

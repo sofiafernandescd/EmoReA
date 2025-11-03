@@ -190,8 +190,8 @@ code {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.1s;
-  color: white; /* contrast with cool/warm backgrounds */
-  text-transform: uppercase;
+  background-color: var(--warm-accent); /* soft lilac */
+  color: var(--cool-text); /* same dark purple-gray text */
 }
 
 .action-button:hover {
