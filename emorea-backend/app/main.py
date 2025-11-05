@@ -16,6 +16,7 @@ from src.assistant import EmotionRecognitionAssistant
 import shutil
 import os
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 class ChatInput(BaseModel):
     user_input: str
@@ -55,9 +56,10 @@ async def analyze_file(file: UploadFile = File(...)):
         file_path = f"temp_{file.filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        # Analyze the file using the assistant
-        analysis_result = assistant.analyze(file_path)
-        # Clean up temporary file
+        # analyze the file using the assistant
+        # analysis_result = assistant.analyze(file_path)
+        analysis_result = await run_in_threadpool(assistant.analyze, file_path)
+        # clean up temporary file
         os.remove(file_path)  
         return analysis_result
     except Exception as e:
@@ -73,9 +75,7 @@ async def chat_with_assistant(input_data: ChatInput):
         3. The response is returned to the user.
         4. The user can continue the conversation by sending more messages.
         5. The assistant maintains the context of the conversation.
-        6. The user can ask questions or request clarifications.
-        7. The assistant provides informative and relevant responses.
-        8. The user can end the conversation at any time.
+        6. The user can end the conversation at any time.
   
     Args:
         input_data (ChatInput): The user input containing the message.
@@ -84,7 +84,7 @@ async def chat_with_assistant(input_data: ChatInput):
     Raises:
         HTTPException: If there is an error during the chat interaction.
     """
-    # Process the user input and get the assistant's response
+    # process the user input and get the assistant's response
     response = assistant.chat(input_data.user_input)
     return response
 
