@@ -30,7 +30,10 @@ app = FastAPI(
 # CORS middleware to allow requests from your React frontend (adjust origin as needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Make sure your React app's origin is here
+    allow_origins=[
+        "http://localhost:3000", # development frontend
+        "https://emorea-848931407875.europe-west1.run.app" # Google Cloud Run frontend
+        ],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
