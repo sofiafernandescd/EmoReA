@@ -22,4 +22,4 @@ ENV PIP_NO_CACHE_DIR=1
 EXPOSE 8080
 
 # Comando de arranque (dinâmico)
-CMD exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}
