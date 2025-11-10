@@ -19,7 +19,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 
 # Expor a porta (para debug local)
-EXPOSE 8080
+EXPOSE 8000
 
 # Comando de arranque (dinâmico)
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
