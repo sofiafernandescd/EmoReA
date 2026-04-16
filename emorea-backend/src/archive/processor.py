@@ -174,4 +174,4 @@ class FileProcessor:
         result["meta"]["video_duration_s"] = duration
         result["meta"]["fps"] = fps
 
-        return result
+        return result 

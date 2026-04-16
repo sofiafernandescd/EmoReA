@@ -8,8 +8,6 @@
  #          - https://docs.litellm.ai/docs/providers/ollama
  '''
 import os
-os.environ["LITELLM_API_BASE"] = "http://localhost:11434"
-os.environ["LITELLM_API_KEY"] = "ollama"
 #import tensorflow as tf
 #import pickle
 from joblib import load
@@ -23,10 +21,16 @@ import librosa
 import cv2
 import json
 from pathlib import Path
+import base64
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
+
+from dotenv import load_dotenv
+
+# Load at the module level or in your main entry point
+load_dotenv()
 
 
 class TextEmotionRecognizerHF:
@@ -68,7 +72,7 @@ class TextEmotionRecognizerHF:
 class TextEmotionRecognizer:
     def __init__(self, 
                  #llm_model="deepseek-r1:1.5b"
-                 llm_model="qwen"
+                 llm_model="mistral"
                  #llm_model="phi4-mini"
                  #llm_model="stablelm2:latest"
                  #llm_model="tinyllama:latest"
@@ -91,7 +95,8 @@ class TextEmotionRecognizer:
                     response = completion(
                         #model=f"ollama_chat/{self.llm_model}",
                         model=f"ollama/{self.llm_model}",
-                        api_base="http://localhost:11434",
+                        #api_base="http://localhost:11434",
+                        api_base="https://claribel-isotypic-gertrude.ngrok-free.dev",
                         api_key="ollama",  # dummy
                         #max_tokens=1,  
                         #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
@@ -125,6 +130,7 @@ class TextEmotionRecognizer:
             
                         model=f"ollama/{self.llm_model}",
                         api_base="http://localhost:11434",
+                        #api_base="",
                         api_key="ollama",  # dummy
                         #max_tokens=1,  # Only allow one token response
                         #stop=["\n", ".", " ", "?", "!", ",", ";", ":"],  
@@ -307,6 +313,33 @@ class SpeechEmotionRecognizer:
         return np.array(feats)
 
     def analyze(self, audio, sr):
+        if self.model is None: return {"error": "Model missing"}
+        
+        # GeMAPS extraction
+        smile = opensmile.Smile(
+            feature_set=opensmile.FeatureSet.GeMAPSv01b,
+            feature_level=opensmile.FeatureLevel.Functionals,
+        )
+        features = smile.process_signal(audio, sr)
+        
+        # Extract meaningful parameters for the Prompt
+        # F0 is Pitch, jitter is voice stability
+        acoustic_meta = {
+            "pitch_mean": float(features['F0semitoneFrom27.5Hz_sma3nz_amean'].iloc[0]),
+            "loudness_mean": float(features['loudness_sma3_amean'].iloc[0]),
+            "jitter": float(features['jitterLocal_sma3nz_amean'].iloc[0])
+        }
+
+        try:
+            prediction = self.model.predict(features.values)
+            return {
+                "label": prediction[0],
+                "metrics": acoustic_meta
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    def old_analyze(self, audio, sr):
         if self.model is None:
             return {"error": "Speech emotion recognizer model not loaded"}
         #features = self.extract_audio_features(audio, sr)
@@ -358,7 +391,15 @@ class FaceEmotionRecognizer:
                 enforce_detection=False,  # Ensure face detection is enforced
             )
             if results:
-                return {'emotions': results[0]['emotion'], 'dominant_emotion': results[0]['dominant_emotion']}
+                # convert to JPEG in memory
+                _, buffer = cv2.imencode('.jpg', image_array)
+                # convert to string Base64
+                img_base64 = base64.b64encode(buffer).decode('utf-8')
+                return {
+                    'emotions': results[0]['emotion'], 
+                    'dominant_emotion': results[0]['dominant_emotion'],
+                    'frame': f"data:image/jpeg;base64,{img_base64}" # ready for <img>
+                    }
             else:
                 return {'error': 'No face detected'}
         except Exception as e:

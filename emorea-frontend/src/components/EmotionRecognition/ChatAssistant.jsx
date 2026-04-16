@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { chatWithAssistant } from "../../services/api";
-// you should ensure './App.css' is imported in a parent component or here if needed
+
+const SUGGESTED_PROMPTS = [
+  "What can I improve in my presentation?",
+  "How was my body language?",
+  "What can I improve in the content?",
+  "Analyze my vocal tone."
+];
 
 // function to safely format markdown bold (e.g., **text** to <strong>text</strong>)
 const formatassistanttext = (text) => {
@@ -28,9 +34,22 @@ const cleanResponseText = (text) => {
 };
 
 const ChatAssistant = ({ enabled }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
+  const messagesEndRef = useRef(null);
 
+  // automatically scroll to the bottom whenever messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+
+  // old function
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!enabled) {
@@ -49,43 +68,73 @@ const ChatAssistant = ({ enabled }) => {
     setUserInput("");
   };
 
+  // more dynamic chatbot UI
+  const handleSend = async (textToSend) => {
+    if (!enabled || !textToSend.trim() || isLoading) return;
+
+    setIsLoading(true);
+    
+    // add user message 
+    const newMessages = [...messages, { sender: "user", text: textToSend }];
+    setMessages(newMessages);
+    setUserInput("");
+
+    try {
+      const rawreply = await chatWithAssistant(textToSend);
+      const cleanedreply = cleanResponseText(rawreply);
+
+      setMessages([...newMessages, { sender: "assistant", text: cleanedreply }]);
+    } catch (error) {
+      console.error("Chat failed", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="chat-assistant-container">
       <h3>Chat with Assistant</h3>
       
-      {/* main chat messages container */}
       <div className="chat-messages-scroll">
         {messages.map((m, i) => (
-          // message styling - uses dynamic classes
-          <div 
-            key={i} 
-            className={`chat-message ${m.sender}`} // classes 'chat-message user' or 'chat-message assistant'
-          >
-            <strong style={{ fontWeight: 'bold' }}>{m.sender === 'user' ? 'You: ' : 'Assistant: '}</strong> 
-            
-            {/* conditional rendering for bold markdown */}
-            {m.sender === "assistant" ? (
-              <span dangerouslySetInnerHTML={{ __html: formatassistanttext(m.text) }} />
-            ) : (
-              <span>{m.text}</span>
-            )}
+          <div key={i} className={`chat-message ${m.sender} slide-up`}>
+            <strong>{m.sender === 'user' ? 'You: ' : 'Assistant: '}</strong>
+            <span dangerouslySetInnerHTML={{ __html: formatassistanttext(m.text) }} />
           </div>
         ))}
+        {/* Invisible element to anchor the scroll */}
+        <div ref={messagesEndRef} />
+        {isLoading && <div className="chat-message assistant thinking">Assistant is typing...</div>}
       </div>
-      
-      {/* input form */}
-      <form onSubmit={handleSubmit} className="chat-form">
+
+      {/* Suggested Options Chips */}
+      <div className="suggested-prompts">
+        {SUGGESTED_PROMPTS.map((prompt, idx) => (
+          <button 
+            key={idx} 
+            className="suggestion-chip"
+            onClick={() => handleSend(prompt)}
+            disabled={!enabled || isLoading}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={(e) => { e.preventDefault(); handleSend(userInput); }} className="chat-form">
         <input
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          placeholder="Ask something about the detected emotions..."
+          placeholder="Ask something..."
           className="chat-input"
         />
         <button 
           type="submit" 
-          className="chat-send-button"
+          className={`chat-send-button ${isLoading ? 'loading' : ''}`}
+          disabled={isLoading || !enabled}
         >
-          Send
+          <span className="button-text">{isLoading ? "Thinking" : "Send"}</span>
+          {isLoading && <span className="dot-loader"></span>}
         </button>
       </form>
     </div>

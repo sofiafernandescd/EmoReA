@@ -6,7 +6,7 @@ import ChatAssistant from "./ChatAssistant";
 import "../../App.css";
 
 const EmotionRecognition = () => {
-  const [activeTab, setActiveTab] = useState("webcam");
+  const [activeTab, setActiveTab] = useState("upload");
   const [analysisResult, setAnalysisResult] = useState(null);
   const [preview, setPreview] = useState(null); // { src, type }
 

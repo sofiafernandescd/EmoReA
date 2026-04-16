@@ -116,3 +116,80 @@ code {
   cursor: pointer;
   font-weight: bold;
 }
+
+/* Animation for messages sent upward */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Suggestion Chips Styling */
+.suggested-prompts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+.suggestion-chip {
+  background: #f0f2f5;
+  border: 1px solid #dcdfe6;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  background: #e4e7ed;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+/* Thinking/Loading Button Logic */
+.chat-send-button {
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+
+.chat-send-button.loading {
+  background: #a0cfff; /* Lighter blue while thinking */
+  cursor: not-allowed;
+}
+
+/* Simple Dot Loader for the button */
+.dot-loader {
+  display: inline-block;
+  margin-left: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: white;
+  animation: dotFlashing 1s infinite linear alternate;
+}
+
+@keyframes dotFlashing {
+  0% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+/* Ensure the scroll container stays at the bottom */
+.chat-messages-scroll {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}

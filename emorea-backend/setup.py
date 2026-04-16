@@ -2,8 +2,8 @@
         'fastapi>=0.68.0',
         'uvicorn>=0.15.0',
         'librosa>=0.8.1',
-        'opencv-contrib-python',
         'opencv-python',
+        'opencv-contrib-python',
         'pydub>=0.25.1',
         'python-docx>=0.8.11',
         'PyPDF2>=1.27.5',
@@ -30,7 +30,10 @@
         'litellm',
         'deepface',
         'gensim',
-        'jiwer'
+        'jiwer',
+        'fastapi',
+        'uvicorn',
+        'pillow'
 
     ],
 """
