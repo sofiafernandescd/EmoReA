@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 
-This module evaluates two different personas (Academic Advisor vs. Pitch Mentor; Simple vs. Detailed) in  to derive comparative metrics.
+This module evaluates the feedback given by two different personas (Academic Advisor vs. Pitch Mentor; Simple vs. Detailed) to a dataset of Academic and Pitch presentations.
 
 The system processes text and audio (speech). First it generates emotion-aware feedback (`feedback_coach`), then GPT-4.1 and GPT-4o are utilized to assess the quality of that feedback (`llm_judge`).
 
