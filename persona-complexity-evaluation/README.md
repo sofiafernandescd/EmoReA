@@ -1,10 +1,12 @@
-# Persona Complexity Evaluation
+# 🎭 Persona x Complexity Evaluation
 
-Evaluation framework for assessing persona complexity in emotional dialogue systems using multimodal analysis.
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 
-## Overview
+This module evaluates two different personas (Academic Advisor vs. Pitch Mentor; Simple vs. Detailed) in  to derive comparative metrics.
 
-This project evaluates the complexity of personas in emotional dialogues by analyzing coaching feedback, LLM-based judgments, and statistical models. It integrates facial expression recognition, speech emotion recognition, and text-based emotion analysis.
+The system processes text and audio (speech). First it generates emotion-aware feedback (`feedback_coach`), then GPT-4.1 and GPT-4o are utilized to assess the quality of that feedback (`llm_judge`).
+
+
 
 ## Project Structure
 
