@@ -72,6 +72,26 @@ If you use this project, code, or findings in your research, please cite the cor
 
 ### 2. Conference Papers
 
+#### Text and Speech Emotion Recognition for Human–Computer Interaction (2026)
+
+> Condesso, S., Leite, N., & Ferreira, A. J. (2026). *Text and Speech Emotion Recognition for Human–Computer Interaction*. In M. Antona & C. Stephanidis (Eds.), *Universal Access in Human-Computer Interaction. HCII 2026. Lecture Notes in Computer Science (Vol. 16710, pp. 189–208).* Springer. https://doi.org/10.1007/978-3-032-29653-5_12
+
+```bibtex
+@inproceedings{inproceedings,
+  author    = {Condesso, Sofia and Leite, Nuno and Ferreira, Artur J.},
+  title     = {Text and Speech Emotion Recognition for Human--Computer Interaction},
+  booktitle = {Universal Access in Human-Computer Interaction},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {16710},
+  editor    = {Margherita Antona and Constantine Stephanidis},
+  pages     = {189--208},
+  year      = {2026},
+  publisher = {Springer},
+  address   = {Cham},
+  doi        = {10.1007/978-3-032-29653-5_12}
+}
+```
+
 #### Facial Emotion Recognition (2026)
 > Condesso, S., Ferreira, A. J., & Leite, N. (2026). Facial Emotion Recognition: A Comparative Study with Cross-Corpus and Multi-Corpus Training. In *Proceedings of the Conference*.
 
